@@ -1,0 +1,209 @@
+<!-- src/app/features/liberacion/liberacion.component.html -->
+
+<!-- ── KPIs ─────────────────────────────────────────────────────────── -->
+<div class="grid-4 mb16">
+
+  <div class="card">
+    <div class="kpi">
+      <div class="kpi-label">Total Lotes</div>
+      <div class="kpi-value">{{ kpis.total }}</div>
+      <div class="kpi-sub muted">en el sistema</div>
+    </div>
+  </div>
+
+  <div class="card" (click)="filtro = 'disponible'" style="cursor:pointer;">
+    <div class="kpi">
+      <div class="kpi-label">Disponibles para Liberar</div>
+      <div class="kpi-value text-blue">{{ kpis.disponibles }}</div>
+      <div class="kpi-sub text-blue">aprobados por calidad</div>
+    </div>
+  </div>
+
+  <div class="card" (click)="filtro = 'liberado'" style="cursor:pointer;">
+    <div class="kpi">
+      <div class="kpi-label">Liberados</div>
+      <div class="kpi-value text-accent">{{ kpis.liberados }}</div>
+      <div class="kpi-sub text-accent">stock disponible despacho</div>
+    </div>
+  </div>
+
+  <div class="card" (click)="filtro = 'bloqueado'" style="cursor:pointer;">
+    <div class="kpi">
+      <div class="kpi-label">Bloqueados</div>
+      <div class="kpi-value text-warn">{{ kpis.bloqueados }}</div>
+      <div class="kpi-sub kpi-down">pendiente o rechazado</div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ── TABLA PRINCIPAL ───────────────────────────────────────────────── -->
+<div class="card">
+
+  <div class="card-head">
+    <span>🔓</span>
+    <span class="card-title">Liberación de Inventario</span>
+    <span class="rf-tag">RF-08</span>
+    <div style="margin-left:auto; display:flex; align-items:center; gap:10px;">
+      <div class="filtros">
+        <button class="btn btn-sm"
+                [class.btn-primary]="filtro === 'todos'"
+                [class.btn-outline]="filtro !== 'todos'"
+                (click)="filtro = 'todos'">Todos</button>
+        <button class="btn btn-sm"
+                [class.btn-primary]="filtro === 'disponible'"
+                [class.btn-outline]="filtro !== 'disponible'"
+                (click)="filtro = 'disponible'">Disponibles</button>
+        <button class="btn btn-sm"
+                [class.btn-primary]="filtro === 'liberado'"
+                [class.btn-outline]="filtro !== 'liberado'"
+                (click)="filtro = 'liberado'">Liberados</button>
+        <button class="btn btn-sm"
+                [class.btn-primary]="filtro === 'bloqueado'"
+                [class.btn-outline]="filtro !== 'bloqueado'"
+                (click)="filtro = 'bloqueado'">Bloqueados</button>
+      </div>
+      <button class="btn btn-outline btn-sm" (click)="cargarLotes()">↺ Actualizar</button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" style="padding:40px; text-align:center; color:var(--muted); font-size:13px;">
+    Cargando lotes…
+  </div>
+
+  <div *ngIf="!loading">
+    <table>
+      <thead>
+        <tr>
+          <th>Lote</th>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Calidad</th>
+          <th>Estado Stock</th>
+          <th>Revisado por</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let lote of lotesFiltrados">
+
+          <!-- Fila normal -->
+          <tr [class.fila-seleccionada]="loteSeleccionado?.id === lote.id">
+
+            <td class="mono text-accent">{{ lote.codigo_lote }}</td>
+            <td>{{ lote.producto }}</td>
+            <td class="mono">{{ lote.cantidad | number }} uds</td>
+
+            <td>
+              <span class="badge" [ngClass]="badgeCalidad(lote.calidad_estado)">
+                {{ lote.calidad_estado | titlecase }}
+              </span>
+            </td>
+
+            <td>
+              <span class="badge" [ngClass]="badgeStock(lote).clase">
+                {{ badgeStock(lote).label }}
+              </span>
+            </td>
+
+            <td class="muted">
+              <span *ngIf="lote.calidad_por">{{ lote.calidad_por }}</span>
+              <span *ngIf="!lote.calidad_por">—</span>
+            </td>
+
+            <td>
+              <button *ngIf="lote.stock_liberado"
+                      class="btn btn-outline btn-sm"
+                      disabled
+                      style="opacity:.45; cursor:not-allowed;">
+                Liberado
+              </button>
+
+              <button *ngIf="!lote.stock_liberado && lote.stock_bloqueado"
+                      class="btn btn-outline btn-sm"
+                      disabled
+                      style="opacity:.45; cursor:not-allowed;"
+                      title="Requiere aprobación de calidad — RF-08">
+                Bloqueado
+              </button>
+
+              <button *ngIf="!lote.stock_liberado && !lote.stock_bloqueado"
+                      class="btn btn-sm"
+                      [class.btn-primary]="loteSeleccionado?.id !== lote.id"
+                      [class.btn-outline]="loteSeleccionado?.id === lote.id"
+                      (click)="toggleConfirmacion(lote)">
+                {{ loteSeleccionado?.id === lote.id ? '✕ Cancelar' : '🔓 Liberar' }}
+              </button>
+            </td>
+          </tr>
+
+          <!-- Panel de confirmación inline — se abre debajo de la fila -->
+          <tr *ngIf="loteSeleccionado?.id === lote.id" class="fila-confirmacion">
+            <td colspan="7" style="padding:0;">
+              <div class="panel-confirmacion">
+
+                <div class="panel-info">
+                  <div class="panel-icon">🔓</div>
+                  <div>
+                    <div class="panel-titulo">Confirmar liberación de stock</div>
+                    <div class="panel-detalle">
+                      <strong>{{ lote.cantidad | number }} unidades</strong> de
+                      <strong>{{ lote.producto }}</strong> ({{ lote.codigo_lote }})
+                      quedarán disponibles para despacho.
+                      Esta acción <strong>no puede revertirse</strong> — RF-12.
+                    </div>
+                    <div class="panel-calidad" *ngIf="lote.calidad_por">
+                      ✔ Aprobado por <strong>{{ lote.calidad_por }}</strong>
+                      <span *ngIf="lote.calidad_obs"> — {{ lote.calidad_obs }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="panel-acciones">
+                  <button class="btn btn-outline btn-sm"
+                          (click)="cerrarConfirmacion()"
+                          [disabled]="liberando">
+                    Cancelar
+                  </button>
+                  <button class="btn btn-primary btn-sm"
+                          (click)="confirmarLiberacion()"
+                          [disabled]="liberando">
+                    <span *ngIf="!liberando">🔓 Confirmar liberación</span>
+                    <span *ngIf="liberando">Liberando…</span>
+                  </button>
+                </div>
+
+              </div>
+            </td>
+          </tr>
+
+        </ng-container>
+
+        <tr *ngIf="lotesFiltrados.length === 0">
+          <td colspan="7" style="text-align:center; padding:32px; color:var(--muted);">
+            No hay lotes que coincidan con el filtro seleccionado.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="aviso-rf">
+      <span style="color:var(--warn);">⚠</span>
+      <span>
+        Los lotes con calidad <strong>pendiente o rechazada</strong> tienen el stock
+        bloqueado para liberación — <strong>RF-08 Liberación de Stock</strong>
+      </span>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ── TOAST ─────────────────────────────────────────────────────────── -->
+<ng-container *ngIf="toast as t">
+  <div class="toast" [ngClass]="'toast-' + t.tipo">
+    <span>{{ t.tipo === 'ok' ? '✔' : '✗' }}</span>
+    <span>{{ t.mensaje }}</span>
+  </div>
+</ng-container>

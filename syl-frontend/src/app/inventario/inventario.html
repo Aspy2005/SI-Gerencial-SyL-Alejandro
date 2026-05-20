@@ -1,0 +1,218 @@
+<div>
+
+  <!-- ══ CABECERA ══════════════════════════════════════════════ -->
+  <div class="section-head">
+    <div>
+      <div class="section-title">Inventario Operativo</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;">
+        Sistema S&amp;L › Operación › Inventario
+      </div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
+      <div class="status-pill">
+        <span class="dot" style="background:var(--accent2);"></span>
+        Actualización automática cada 30 s
+      </div>
+      <button
+        type="button"
+        class="btn btn-outline btn-sm"
+        [disabled]="cargando"
+        (click)="cargarInventario()"
+      >
+        {{ cargando ? 'Cargando...' : '↻ Refrescar' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ ERROR ═════════════════════════════════════════════════ -->
+  <div
+    *ngIf="errorMsg"
+    style="
+      margin-bottom:16px;
+      padding:12px 16px;
+      background:rgba(255,76,106,.08);
+      border:1px solid rgba(255,76,106,.25);
+      border-radius:8px;
+      font-size:12px;
+      color:var(--danger);
+    "
+  >
+    ⚠ {{ errorMsg }}
+  </div>
+
+  <!-- ══ KPIs ══════════════════════════════════════════════════ -->
+  <div class="grid-4 mb16">
+
+    <div class="card">
+      <div class="kpi">
+        <div class="kpi-label">Stock Total</div>
+        <div class="kpi-value text-accent">
+          {{ cargando ? '—' : (kpis.stock_total | number) }}
+        </div>
+        <div class="kpi-sub muted">unidades</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="kpi">
+        <div class="kpi-label">Stock Liberado</div>
+        <div class="kpi-value text-blue">
+          {{ cargando ? '—' : (kpis.stock_liberado | number) }}
+        </div>
+        <div class="kpi-sub muted">disponible despacho</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="kpi">
+        <div class="kpi-label">En Revisión</div>
+        <div class="kpi-value text-warn">
+          {{ cargando ? '—' : (kpis.en_revision | number) }}
+        </div>
+        <div class="kpi-sub muted">pendiente calidad</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="kpi">
+        <div class="kpi-label">Mermas</div>
+        <div class="kpi-value text-danger">
+          {{ cargando ? '—' : kpis.mermas }}
+        </div>
+        <div class="kpi-sub muted">descontadas</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ TABLA INVENTARIO POR PRODUCTO ════════════════════════ -->
+  <div class="card">
+    <div class="card-head">
+      <span>🗃️</span>
+      <span class="card-title">Inventario por Producto</span>
+      <span class="rf-tag">RF-06</span>
+      <span class="badge badge-blue" style="margin-left:auto;">
+        {{ productos.length }} productos
+      </span>
+    </div>
+
+    <!-- Skeleton mientras carga -->
+    <div
+      *ngIf="cargando"
+      style="padding:40px;text-align:center;color:var(--muted);font-size:13px;"
+    >
+      Cargando inventario...
+    </div>
+
+    <!-- Sin datos -->
+    <div
+      *ngIf="!cargando && productos.length === 0 && !errorMsg"
+      style="padding:40px;text-align:center;color:var(--muted);font-size:13px;"
+    >
+      Sin productos registrados aún.
+    </div>
+
+    <!-- Tabla -->
+    <div *ngIf="!cargando && productos.length > 0" style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Lotes</th>
+            <th>Stock Real</th>
+            <th>Stock Teórico</th>
+            <th>Diferencia</th>
+            <th>Progreso</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of productos">
+
+            <td style="font-weight:500;">{{ item.producto }}</td>
+
+            <td class="mono">{{ item.num_lotes }}</td>
+
+            <td class="mono text-accent">{{ item.stock_real | number }}</td>
+
+            <td class="mono" style="color:var(--muted);">
+              {{ item.stock_teorico | number }}
+            </td>
+
+            <td class="mono" [ngClass]="diferenciaClass(item.diferencia)">
+              {{ item.diferencia === 0 ? '0' : signo(item.diferencia) }}
+            </td>
+
+            <!-- Barra de progreso inline -->
+            <td style="min-width:140px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="prog-track" style="flex:1;height:6px;">
+                  <div
+                    class="prog-fill"
+                    [ngClass]="fillClass(item.estado)"
+                    [style.width]="porcentajeWidth(item.stock_real, item.stock_teorico)"
+                  ></div>
+                </div>
+                <span class="mono" style="font-size:11px;color:var(--muted);flex-shrink:0;">
+                  {{ porcentaje(item.stock_real, item.stock_teorico) }}%
+                </span>
+              </div>
+            </td>
+
+            <td>
+              <span class="badge" [ngClass]="badgeEstado(item.estado)">
+                {{ labelEstado(item.estado) }}
+              </span>
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pie informativo -->
+    <div
+      *ngIf="!cargando && productos.length > 0"
+      style="
+        padding:12px 20px;
+        border-top:1px solid var(--border);
+        font-size:11px;
+        color:var(--muted);
+        display:flex;
+        gap:20px;
+      "
+    >
+      <span>
+        ✅ Concilia:
+        <strong style="color:var(--accent);">
+          {{ productos | inventarioCount:'concilia' }}
+        </strong>
+      </span>
+      <span>
+        ⚠ Revisar:
+        <strong style="color:var(--warn);">
+          {{ productos | inventarioCount:'revisar' }}
+        </strong>
+      </span>
+      <span>
+        ❌ Diferencia:
+        <strong style="color:var(--danger);">
+          {{ productos | inventarioCount:'diferencia' }}
+        </strong>
+      </span>
+      <span style="margin-left:auto;">
+        Stock real total:
+        <strong style="color:var(--accent);" class="mono">
+          {{ productos | stockSum:'stock_real' | number }}
+        </strong>
+        /
+        <strong class="mono">
+          {{ productos | stockSum:'stock_teorico' | number }}
+        </strong>
+        unidades
+      </span>
+    </div>
+
+  </div>
+
+</div>

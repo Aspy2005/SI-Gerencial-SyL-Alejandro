@@ -1,0 +1,285 @@
+<div>
+
+  <div class="section-head">
+    <div class="section-title">Control de Calidad — Aprobación de Lotes</div>
+    <span class="badge badge-warn">{{ lotes.length }} lotes en revisión</span>
+  </div>
+
+  <div class="card mb16">
+    <div class="card-head">
+      <span>🔬</span>
+      <span class="card-title">Cola de Revisión</span>
+      <span class="rf-tag">RF-07</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Lote</th>
+          <th>Producto</th>
+          <th>Uds Escaneadas</th>
+          <th>Mermas</th>
+          <th>% Integridad</th>
+          <th>Calidad</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let lote of lotes">
+          <td class="mono text-accent">{{ lote.codigo_lote }}</td>
+          <td>{{ lote.producto }}</td>
+          <td>{{ lote.bolsas_escaneadas }}</td>
+          <td>{{ lote.total_mermas }}</td>
+          <td>
+            <span class="badge"
+              [ngClass]="{
+                'badge-green':  lote.integridad >= 99,
+                'badge-warn':   lote.integridad >= 96 && lote.integridad < 99,
+                'badge-danger': lote.integridad < 96
+              }">
+              {{ lote.integridad | number:'1.1-1' }}%
+            </span>
+          </td>
+          <td>
+            <span class="badge"
+              [ngClass]="{
+                'badge-muted':  lote.calidad_estado === 'pendiente',
+                'badge-green':  lote.calidad_estado === 'aprobado',
+                'badge-danger': lote.calidad_estado === 'rechazado'
+              }">
+              {{ lote.calidad_estado | titlecase }}
+            </span>
+          </td>
+          <td style="display:flex;gap:6px;flex-wrap:wrap;">
+
+            <ng-container *ngIf="lote.calidad_estado === 'pendiente'">
+              <button class="btn btn-primary btn-sm"
+                (click)="seleccionarLote(lote, 'aprobar')">
+                ✓ Aprobar
+              </button>
+              <button class="btn btn-danger btn-sm"
+                (click)="seleccionarLote(lote, 'rechazar')">
+                ✗ Rechazar
+              </button>
+            </ng-container>
+
+            <ng-container *ngIf="lote.calidad_estado === 'aprobado'">
+              <span style="font-size:11px;color:var(--accent);margin-right:4px;">✔ Aprobado</span>
+              <button class="btn btn-outline btn-sm"
+                (click)="seleccionarLote(lote, 'rechazar')">
+                Corregir
+              </button>
+            </ng-container>
+
+            <ng-container *ngIf="lote.calidad_estado === 'rechazado'">
+              <span style="font-size:11px;color:var(--danger);margin-right:4px;">✘ Rechazado</span>
+              <button class="btn btn-outline btn-sm"
+                (click)="seleccionarLote(lote, 'aprobar')">
+                Corregir
+              </button>
+            </ng-container>
+
+          </td>
+        </tr>
+        <tr *ngIf="lotes.length === 0">
+          <td colspan="7" style="text-align:center;padding:24px;color:var(--muted);">
+            No hay lotes
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- DETALLE APROBAR -->
+  <div class="card mb16"
+    *ngIf="loteSeleccionado && accionActual === 'aprobar'"
+    style="border:1px solid var(--accent);">
+    <div class="card-head">
+      <span>✅</span>
+      <span class="card-title">
+        {{ loteSeleccionado.calidad_estado === 'rechazado' ? 'Corregir a Aprobado' : 'Aprobar Lote' }}
+        — {{ loteSeleccionado.codigo_lote }}
+      </span>
+      <button class="btn btn-outline btn-sm" style="margin-left:auto;"
+        (click)="loteSeleccionado = null">✕ Cerrar</button>
+    </div>
+    <div class="card-body grid-2">
+
+      <!-- Criterios + Observaciones -->
+      <div>
+        <div style="margin-bottom:16px;">
+          <div class="form-label" style="margin-bottom:8px;">Criterios de Evaluación</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="criterios.integridadFisica"
+                style="accent-color:var(--accent);"> Integridad física del empaque
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="criterios.legibilidadCodigo"
+                style="accent-color:var(--accent);"> Legibilidad del código de barras
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="criterios.concordanciaPeso"
+                style="accent-color:var(--accent);"> Concordancia de peso
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="criterios.temperatura"
+                style="accent-color:var(--accent);"> Temperatura de almacenamiento
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Observaciones (opcional)</label>
+          <textarea class="form-input" style="resize:vertical;height:80px;"
+            placeholder="Notas de la inspección…"
+            [(ngModel)]="observaciones">
+          </textarea>
+        </div>
+        <button class="btn btn-primary"
+          (click)="confirmarAprobacion()"
+          [disabled]="submitting">
+          {{ submitting ? 'Guardando...' : '✓ Guardar Aprobación' }}
+        </button>
+      </div>
+
+      <!-- Donut -->
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="donut-wrap" style="margin-bottom:16px;">
+          <svg viewBox="0 0 120 120" width="120" height="120">
+            <circle cx="60" cy="60" r="50" fill="none"
+              stroke="var(--surface2)" stroke-width="14"/>
+            <circle cx="60" cy="60" r="50" fill="none"
+              stroke="var(--accent)" stroke-width="14"
+              stroke-dasharray="314 314"
+              [attr.stroke-dashoffset]="donutOffset(loteSeleccionado.integridad)"/>
+          </svg>
+          <div class="donut-center">
+            <div class="val">{{ loteSeleccionado.integridad | number:'1.0-0' }}%</div>
+            <div class="sub">Integridad</div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:12px;color:var(--muted);">
+          {{ loteSeleccionado.bolsas_escaneadas }} unidades inspeccionadas<br>
+          {{ loteSeleccionado.total_mermas }} mermas registradas
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- DETALLE RECHAZAR -->
+  <div class="card mb16"
+    *ngIf="loteSeleccionado && accionActual === 'rechazar'"
+    style="border:1px solid var(--danger);">
+    <div class="card-head">
+      <span>✗</span>
+      <span class="card-title">
+        {{ loteSeleccionado.calidad_estado === 'aprobado' ? 'Corregir a Rechazado' : 'Rechazar Lote' }}
+        — {{ loteSeleccionado.codigo_lote }}
+      </span>
+      <button class="btn btn-outline btn-sm" style="margin-left:auto;"
+        (click)="loteSeleccionado = null">✕ Cerrar</button>
+    </div>
+    <div class="card-body grid-2">
+
+      <!-- Motivo + info -->
+      <div>
+        <div style="
+          padding:14px;
+          background:rgba(255,76,106,.06);
+          border:1px solid rgba(255,76,106,.2);
+          border-radius:8px;
+          margin-bottom:16px;
+          font-size:13px;">
+          <div style="font-weight:600;color:var(--danger);margin-bottom:6px;">
+            ⚠ Información del lote
+          </div>
+          <div style="color:var(--muted);line-height:1.7;">
+            Integridad: <strong style="color:var(--text);">
+              {{ loteSeleccionado.integridad | number:'1.1-1' }}%
+            </strong><br>
+            Escaneadas: <strong style="color:var(--text);">
+              {{ loteSeleccionado.bolsas_escaneadas }}
+            </strong> unidades<br>
+            Mermas: <strong style="color:var(--danger);">
+              {{ loteSeleccionado.total_mermas }}
+            </strong> registradas
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Motivo del rechazo *</label>
+          <select class="form-input" style="margin-bottom:10px;"
+            [(ngModel)]="motivoRechazoTipo"
+            (change)="onMotivoTipoChange()">
+            <option value="">Seleccione un motivo…</option>
+            <option value="Integridad física deficiente">Integridad física deficiente</option>
+            <option value="Código de barras ilegible">Código de barras ilegible</option>
+            <option value="Discordancia de peso">Discordancia de peso</option>
+            <option value="Temperatura fuera de rango">Temperatura fuera de rango</option>
+            <option value="Exceso de mermas">Exceso de mermas</option>
+            <option value="Otro">Otro</option>
+          </select>
+          <textarea class="form-input" style="resize:vertical;height:80px;"
+            placeholder="Describe el motivo en detalle…"
+            [(ngModel)]="motivoRechazo">
+          </textarea>
+          <div *ngIf="motivoError"
+            style="font-size:12px;color:var(--danger);margin-top:6px;">
+            ⚠ {{ motivoError }}
+          </div>
+        </div>
+
+        <button class="btn btn-danger"
+          (click)="confirmarRechazo()"
+          [disabled]="submitting">
+          {{ submitting ? 'Guardando...' : '✗ Guardar Rechazo' }}
+        </button>
+      </div>
+
+      <!-- Stats del rechazo -->
+      <div>
+        <div class="card" style="background:var(--surface2);">
+          <div class="card-body">
+            <div class="kpi-label" style="margin-bottom:12px;">Resumen del lote</div>
+            <div class="prog-row">
+              <div class="prog-meta">
+                <span>Bolsas escaneadas</span>
+                <span class="mono">
+                  {{ loteSeleccionado.bolsas_escaneadas }}/{{ loteSeleccionado.cantidad }}
+                </span>
+              </div>
+              <div class="prog-track">
+                <div class="prog-fill fill-blue"
+                  [style.width]="porcentajeWidth(loteSeleccionado.bolsas_escaneadas, loteSeleccionado.cantidad)">
+                </div>
+              </div>
+            </div>
+            <div class="prog-row">
+              <div class="prog-meta">
+                <span>Integridad</span>
+                <span class="mono">{{ loteSeleccionado.integridad | number:'1.1-1' }}%</span>
+              </div>
+              <div class="prog-track">
+                <div class="prog-fill"
+                  [style.width]="loteSeleccionado.integridad + '%'"
+                  [ngClass]="{
+                    'fill-green':  loteSeleccionado.integridad >= 99,
+                    'fill-warn':   loteSeleccionado.integridad >= 96 && loteSeleccionado.integridad < 99,
+                    'fill-danger': loteSeleccionado.integridad < 96
+                  }">
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:12px;font-size:12px;color:var(--muted);">
+              Al rechazar este lote el stock quedará
+              <strong style="color:var(--danger);">bloqueado</strong>
+              hasta nueva revisión.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,406 @@
+// src/app/features/liberacion/liberacion.component.scss
+// Usa las CSS variables globales del mockup (--bg, --surface, --accent, etc.)
+
+// ── KPI grid ────────────────────────────────────────────────────────────────
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.mb16 { margin-bottom: 16px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: border-color 0.15s;
+  color: white ;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+}
+
+.card-head {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.kpi {
+  padding: 20px;
+}
+
+.kpi-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+.kpi-value {
+  font-size: 26px;
+  font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace;
+  margin: 4px 0;
+  line-height: 1;
+}
+
+.kpi-sub {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+
+// ── Filtros rápidos ──────────────────────────────────────────────────────────
+.filtros {
+  display: flex;
+  gap: 6px;
+}
+
+
+// ── Tabla ────────────────────────────────────────────────────────────────────
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(42, 47, 66, 0.6);
+    vertical-align: middle;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+  }
+}
+
+
+// ── Badges ───────────────────────────────────────────────────────────────────
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-green  { background: rgba(0,229,160,.12);  color: var(--accent); }
+.badge-blue   { background: rgba(76,158,255,.12); color: var(--accent2); }
+.badge-warn   { background: rgba(255,179,64,.12); color: var(--warn); }
+.badge-danger { background: rgba(255,76,106,.12); color: var(--danger); }
+.badge-muted  { background: rgba(107,114,144,.12); color: var(--muted); }
+
+
+// ── Botones ──────────────────────────────────────────────────────────────────
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: 0.15s;
+  font-family: inherit;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #000;
+
+  &:hover:not(:disabled) { background: #00ffb3; }
+  &:disabled { opacity: 0.55; }
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+
+  &:hover:not(:disabled) { background: var(--surface2); }
+}
+
+.btn-sm { padding: 5px 10px; font-size: 11px; }
+
+
+// ── Aviso RF footer ──────────────────────────────────────────────────────────
+.aviso-rf {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: rgba(255, 179, 64, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 0 0 10px 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+
+// ── Modal ────────────────────────────────────────────────────────────────────
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  &.open { display: flex; }
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: 480px;
+  max-width: 90vw;
+  animation: modalIn 0.2s ease;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+.modal-head {
+  padding: 20px 24px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.modal-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s;
+
+  &:hover { color: var(--text); background: var(--surface2); }
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-foot {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+
+// ── Resumen lote en modal ────────────────────────────────────────────────────
+.resumen-lote {
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.resumen-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.resumen-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.resumen-val {
+  font-weight: 500;
+}
+
+
+// ── Alerta de inmutabilidad ──────────────────────────────────────────────────
+.alerta-liberacion {
+  background: rgba(76, 158, 255, 0.07);
+  border: 1px solid rgba(76, 158, 255, 0.2);
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  animation: toastIn 0.3s ease;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+
+  &.toast-ok {
+    background: rgba(0, 229, 160, 0.12);
+    border: 1px solid rgba(0, 229, 160, 0.35);
+    color: var(--accent);
+  }
+
+  &.toast-error {
+    background: rgba(255, 76, 106, 0.12);
+    border: 1px solid rgba(255, 76, 106, 0.35);
+    color: var(--danger);
+  }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+.mono        { font-family: 'IBM Plex Mono', monospace; }
+.muted       { color: var(--muted); font-size: 12px; }
+.text-accent { color: var(--accent); }
+.text-blue   { color: var(--accent2); }
+.text-warn   { color: var(--warn); }
+.kpi-down    { color: var(--danger); }
+.rf-tag {
+  font-size: 9px;
+  font-family: 'IBM Plex Mono', monospace;
+  background: rgba(76, 158, 255, 0.15);
+  color: var(--accent2);
+  border: 1px solid rgba(76, 158, 255, 0.3);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+
+// ── Panel confirmación inline ────────────────────────────────────────────────
+.fila-seleccionada td {
+  background: rgba(76, 158, 255, 0.04);
+}
+
+.fila-confirmacion td {
+  padding: 0 !important;
+  border-bottom: none;
+}
+
+.panel-confirmacion {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 20px;
+  background: rgba(76, 158, 255, 0.06);
+  border-top: 1px solid rgba(76, 158, 255, 0.2);
+  border-bottom: 2px solid rgba(76, 158, 255, 0.25);
+  animation: slideDown 0.18s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.panel-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex: 1;
+}
+
+.panel-icon {
+  font-size: 22px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.panel-titulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.panel-detalle {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.panel-calidad {
+  font-size: 11px;
+  color: var(--accent);
+  margin-top: 6px;
+}
+
+.panel-acciones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}

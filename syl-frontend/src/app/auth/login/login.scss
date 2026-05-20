@@ -1,0 +1,67 @@
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  background-image: radial-gradient(ellipse 60% 40% at 50% -10%, rgba(0,229,160,.08) 0%, transparent 70%);
+}
+.login-box { width: 380px; }
+.login-logo { text-align: center; margin-bottom: 32px; }
+.login-logo-icon {
+  width: 52px; height: 52px;
+  background: var(--accent); border-radius: 12px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 700; color: #000;
+  font-family: 'IBM Plex Mono', monospace; margin-bottom: 12px;
+}
+.login-logo-name { font-size: 16px; font-weight: 600; }
+.login-logo-sub  { font-size: 12px; color: var(--muted); }
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px; padding: 32px;
+}
+.login-title    { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.login-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+.role-selector {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 8px; margin-bottom: 20px;
+}
+.role-opt {
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 8px; text-align: center; cursor: pointer;
+  transition: .15s; font-size: 11px;
+  &:hover { border-color: var(--accent); }
+  &.sel   { border-color: var(--accent); background: rgba(0,229,160,.07); color: var(--accent); }
+}
+.role-icon { font-size: 20px; margin-bottom: 4px; }
+.role-name { font-weight: 600; font-size: 11px; }
+
+.rf-tag {
+  font-size: 9px; font-family: 'IBM Plex Mono', monospace;
+  background: rgba(76,158,255,.15); color: var(--accent2);
+  border: 1px solid rgba(76,158,255,.3); border-radius: 4px; padding: 1px 5px;
+}
+.form-group { margin-bottom: 16px; }
+.form-label  { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
+.form-input  {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 7px; padding: 9px 12px; font-size: 13px; color: var(--text);
+  font-family: inherit; transition: .15s;
+  &:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,160,.1); }
+}
+.form-hint  { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.form-error { font-size: 11px; color: var(--danger); display: flex; align-items: center; gap: 4px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 7px; font-size: 13px;
+  font-weight: 600; cursor: pointer; border: none; transition: .15s;
+  font-family: inherit;
+}
+.btn-primary { background: var(--accent); color: #000;
+  &:hover { background: #00ffb3; }
+  &:disabled { opacity: .5; cursor: not-allowed; }
+}

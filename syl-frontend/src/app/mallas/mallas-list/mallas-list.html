@@ -1,0 +1,147 @@
+<div class="grid-2">
+
+  <!-- ── Columna izquierda: carga ── -->
+  <div>
+    <div class="card mb16">
+      <div class="card-head">
+        <span>📤</span>
+        <span class="card-title">Cargar Nueva Malla</span>
+        <span class="rf-tag">RF-01</span>
+      </div>
+
+      <div class="card-body">
+
+        <!-- Zona de arrastre / clic -->
+        <div
+          class="upload-zone"
+          (click)="fileInput.click()"
+          (dragover)="onDragOver($event)"
+          (drop)="onDrop($event)"
+        >
+          <input
+            #fileInput
+            type="file"
+            hidden
+            accept=".xlsx,.xls,.pdf"
+            (change)="onFileSelected($event)"
+          >
+          <div style="font-size:36px;margin-bottom:10px;">📁</div>
+          <div class="upload-title">Arrastra o haz clic para cargar</div>
+          <div class="upload-sub">Formatos aceptados: .pdf, .xlsx</div>
+        </div>
+
+        <!-- Barra de progreso mientras procesa -->
+        <div *ngIf="uploading" style="margin-top:12px;">
+          <div class="flex-center gap8" style="margin-bottom:8px;">
+            <span style="font-size:12px;">
+              Procesando {{ selectedFile?.name }}
+            </span>
+            <span class="badge badge-warn" style="margin-left:auto;">Procesando…</span>
+          </div>
+          <div class="prog-track" style="height:8px;">
+            <div
+              class="prog-fill fill-blue"
+              style="width:100%;transition:width .2s;"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Resumen tras procesar -->
+        <div *ngIf="uploadDone" class="flex-center gap8" style="margin-top:12px;">
+          <span style="color:var(--accent);font-size:16px;">✔</span>
+          <span style="font-size:12px;">
+            Malla procesada:
+            <strong>{{ totalSedes }} sedes, {{ totalUnidades }} unidades detectadas</strong>
+          </span>
+        </div>
+
+        <!-- Botón guardar — DENTRO del card-body -->
+        <div *ngIf="previewReady" style="margin-top:16px;">
+          <button class="btn btn-primary" (click)="guardarMalla()">
+            Guardar Malla
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Columna derecha: historial ── -->
+  <div class="card">
+    <div class="card-head">
+      <span>🗂️</span>
+      <span class="card-title">Historial de Mallas</span>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Archivo</th>
+            <th>Fecha</th>
+            <th>Sedes</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let malla of mallas">
+            <td class="mono">{{ malla.archivo }}</td>
+            <td>{{ malla.fecha_carga | date:'shortDate' }}</td>
+            <td>{{ malla.total_sedes }}</td>
+            <td>
+              <span
+                class="badge"
+                [ngClass]="{
+                  'badge-green': malla.estado === 'activa',
+                  'badge-muted': malla.estado === 'archivada',
+                  'badge-warn':  malla.estado === 'procesando'
+                }"
+              >
+                {{ malla.estado }}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-outline btn-sm" (click)="verMalla(malla)">
+                Ver
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Detalle de malla seleccionada -->
+      <div class="card mt16" *ngIf="mallaSeleccionada">
+        <div class="card-head">
+          <span>👁️</span>
+          <span class="card-title">Detalle de Malla</span>
+        </div>
+
+        <div style="overflow:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Sede</th>
+                <th>Municipio</th>
+                <th>Ruta</th>
+                <th>Bolsas</th>
+                <th>Peso</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let sede of mallaSeleccionada.sedes">
+                <td>{{ sede.nombre }}</td>
+                <td>{{ sede.municipio }}</td>
+                <td>{{ sede.ruta }}</td>
+                <td>{{ sede.cuota_asignada }}</td>
+                <td>{{ sede.peso_total_kg }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

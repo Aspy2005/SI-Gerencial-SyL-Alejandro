@@ -1,0 +1,87 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  display: flex;           /* ← siempre flex; @if controla si existe */
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table th {
+  color: white;
+  font-weight: 600;
+  padding: 12px;
+  border-bottom: 1px solid #444;
+}
+
+table td {
+  color: white;
+  padding: 12px;
+  border-bottom: 1px solid #333;
+}.card-title {
+  color: white;
+}
+.modal {
+  background: var(--surface);
+
+  border: 1px solid var(--border);
+
+  border-radius: 14px;
+
+  width: 480px;
+  max-width: 90vw;
+
+  overflow: hidden;
+}
+
+.modal-head {
+  padding: 20px 24px;
+
+  border-bottom: 1px solid var(--border);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.modal-close {
+  width: 28px;
+  height: 28px;
+
+  border-radius: 6px;
+
+  border: 1px solid var(--border);
+
+  background: transparent;
+
+  color: var(--muted);
+
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-foot {
+  padding: 16px 24px;
+
+  border-top: 1px solid var(--border);
+
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+:host {
+  display: contents; // elimina el elemento host del flujo
+}

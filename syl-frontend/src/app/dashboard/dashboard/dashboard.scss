@@ -1,0 +1,227 @@
+/* ── RF-12 Dashboard ──────────────────────────── */
+
+.dash-page { }
+
+/* Stepper */
+.steps {
+  display: flex;
+  gap: 0;
+}
+
+.step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+
+  &:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 13px;
+    left: 50%;
+    right: -50%;
+    height: 1px;
+    background: var(--border);
+    z-index: 0;
+  }
+
+  &.done .step-circle  { background: var(--accent);  border-color: var(--accent);  color: #000; }
+  &.active .step-circle{ background: var(--surface);  border-color: var(--accent2); color: var(--accent2); }
+
+  &.done .step-label  { color: var(--accent); }
+  &.active .step-label{ color: var(--accent2); }
+}
+.card{
+  color: white;
+}
+.step-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace;
+  z-index: 1;
+  color: var(--muted);
+}
+
+.step-label {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 5px;
+  text-align: center;
+  line-height: 1.35;
+}
+
+/* Barra de progreso */
+.prog-row {
+  margin-bottom: 14px;
+
+  &.skeleton {
+    height: 32px;
+    background: var(--surface2);
+    border-radius: 6px;
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+.prog-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.prog-track {
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.prog-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width .6s ease;
+}
+
+.prog-pct {
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  margin-top: 3px;
+  text-align: right;
+
+  &.text-fill-green  { color: var(--accent); }
+  &.text-fill-blue   { color: var(--accent2); }
+  &.text-fill-warn   { color: var(--warn); }
+  &.text-fill-danger { color: var(--danger); }
+}
+
+/* Timeline actividad */
+.timeline {
+  position: relative;
+  padding-left: 24px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--border);
+  }
+}
+
+.tl-item {
+  position: relative;
+  margin-bottom: 16px;
+
+  &.skeleton {
+    height: 36px;
+    background: var(--surface2);
+    border-radius: 6px;
+    margin-left: -24px;
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+.tl-dot {
+  position: absolute;
+  left: -19px;
+  top: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: var(--bg);
+
+  &.done { background: var(--accent); }
+  &.warn { border-color: var(--warn); }
+}
+
+.tl-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tl-text {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.tl-time {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Shimmer skeleton */
+@keyframes shimmer {
+  0%   { opacity: .5; }
+  50%  { opacity: 1;  }
+  100% { opacity: .5; }
+}
+
+.actividad-feed {
+  display: flex;
+  flex-direction: column;
+}
+
+.feed-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  transition: background .15s;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: rgba(255,255,255,.02); }
+}
+
+.feed-icono {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+  margin-top: 1px;
+}
+
+.feed-contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.feed-desc {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feed-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.feed-tiempo {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.feed-usuario {
+  font-size: 11px;
+}

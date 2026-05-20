@@ -1,0 +1,112 @@
+<!-- src/app/shared/shell/shell.html -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="brand-icon">SL</div>
+    <div>
+      <div class="brand-text">Sistema S&amp;L</div>
+      <div class="brand-sub">Producción &amp; Logística</div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+
+    <div class="nav-label">Principal</div>
+
+    <a class="nav-item" routerLink="/dashboard" routerLinkActive="active">
+      <span class="ico">📊</span> Dashboard
+      <span class="rf-tag" style="margin-left:auto;">RF-12</span>
+    </a>
+
+    @if (userRol === 'jefe_planta') {
+      <a class="nav-item" routerLink="/mallas" routerLinkActive="active">
+        <span class="ico">📂</span> Mallas Logísticas
+        <span class="rf-tag" style="margin-left:auto;">RF-01</span>
+      </a>
+    }
+
+    @if (userRol === 'jefe_planta' ) {
+      <a class="nav-item" routerLink="/produccion" routerLinkActive="active">
+        <span class="ico">⚙️</span> Producción
+        <span class="rf-tag" style="margin-left:auto;">RF-03</span>
+      </a>
+    }
+
+    <div class="nav-label">Operación</div>
+
+    @if (userRol === 'jefe_planta' || userRol === 'operario') {
+      <a class="nav-item" routerLink="/lotes" routerLinkActive="active">
+        <span class="ico">📦</span> Lotes &amp; Etiquetas
+        <span class="rf-tag" style="margin-left:auto;">RF-04</span>
+      </a>
+    }
+
+    @if (userRol === 'jefe_planta' || userRol === 'operario') {
+      <a class="nav-item" routerLink="/escaneo" routerLinkActive="active">
+        <span class="ico">🔍</span> Escaneo HID
+        <span class="rf-tag" style="margin-left:auto;">RF-05</span>
+      </a>
+    }
+
+    @if (userRol === 'jefe_planta' || userRol === 'operario') {
+      <a class="nav-item" routerLink="/inventario" routerLinkActive="active">
+        <span class="ico">🗃️</span> Inventario
+        <span class="rf-tag" style="margin-left:auto;">RF-06</span>
+      </a>
+    }
+
+    <div class="nav-label">Calidad</div>
+
+    @if (userRol === 'jefe_planta' || userRol === 'analista_calidad') {
+      <a class="nav-item" routerLink="/calidad" routerLinkActive="active">
+        <span class="ico">✅</span> Control de Calidad
+        <span class="rf-tag" style="margin-left:auto;">RF-07</span>
+      </a>
+    }
+
+    <!-- RF-08 Liberación de Stock — jefe_planta y analista_calidad -->
+    @if (userRol === 'jefe_planta' || userRol === 'analista_calidad') {
+      <a class="nav-item" routerLink="/liberacion" routerLinkActive="active">
+        <span class="ico">🔓</span> Liberación Stock
+        <span class="rf-tag" style="margin-left:auto;">RF-08</span>
+      </a>
+    }
+
+    @if (userRol === 'jefe_planta' || userRol === 'operario' || userRol === 'analista_calidad') {
+      <a class="nav-item" routerLink="/mermas" routerLinkActive="active">
+        <span class="ico">⚠️</span> Mermas
+        <span class="rf-tag" style="margin-left:auto;">RF-09</span>
+      </a>
+    }
+
+    
+
+    <!-- RF-10 Trazabilidad — jefe_planta y analista_calidad -->
+    @if (userRol === 'jefe_planta' || userRol === 'analista_calidad') {
+      <a class="nav-item" routerLink="/trazabilidad" routerLinkActive="active">
+        <span class="ico">🗺️</span> Trazabilidad
+        <span class="rf-tag" style="margin-left:auto;">RF-10</span>
+      </a>
+    }
+
+     <div class="nav-label">Admin</div>
+@if (userRol === 'jefe_planta') {
+      <a class="nav-item" routerLink="/usuarios" routerLinkActive="active">
+        <span class="ico">👥</span> Usuarios
+        <span class="rf-tag" style="margin-left:auto;">RF-02</span>
+      </a>
+    }
+
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar">{{ userInitials }}</div>
+      <div class="user-info">
+        <div class="name">{{ userName }}</div>
+        <div class="role">{{ userRole }}</div>
+      </div>
+      <span class="logout-btn" (click)="logout()" title="Cerrar sesión">⏻</span>
+    </div>
+  </div>
+
+</nav>

@@ -1,0 +1,233 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.wrap{padding:1rem 0}
+.search-bar{display:flex;gap:8px;margin-bottom:16px;align-items:center}
+.search-bar input{flex:1;padding:8px 12px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:14px;outline:none}
+.search-bar input:focus{border-color:var(--color-border-primary)}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.pill{padding:4px 10px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);transition:all .15s}
+.pill.active,.pill:hover{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info)}
+.cu-card{border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);margin-bottom:12px;overflow:hidden}
+.cu-header{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;cursor:pointer;background:var(--color-background-secondary);user-select:none}
+.cu-header:hover{background:var(--color-background-tertiary)}
+.cu-badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:12px;flex-shrink:0;margin-top:2px}
+.badge-esencial{background:#E6F1FB;color:#0C447C}
+.badge-deseable{background:#EAF3DE;color:#27500A}
+@media(prefers-color-scheme:dark){
+  .badge-esencial{background:#0C447C;color:#B5D4F4}
+  .badge-deseable{background:#27500A;color:#C0DD97}
+}
+.cu-title{flex:1}
+.cu-rf{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:2px}
+.cu-name{font-size:14px;font-weight:500;color:var(--color-text-primary)}
+.cu-actor{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.chevron{font-size:16px;color:var(--color-text-tertiary);transition:transform .2s;flex-shrink:0;margin-top:2px}
+.cu-body{padding:14px;border-top:1px solid var(--color-border-tertiary);display:none;background:var(--color-background-primary)}
+.cu-body.open{display:block}
+.cu-section{margin-bottom:10px}
+.cu-section:last-child{margin-bottom:0}
+.cu-label{font-size:11px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.cu-text{font-size:13px;color:var(--color-text-primary);line-height:1.6}
+.cu-list{font-size:13px;color:var(--color-text-primary);line-height:1.6;padding-left:18px}
+.cu-list li{margin-bottom:2px}
+.tag-row{display:flex;flex-wrap:wrap;gap:4px}
+.tag{font-size:11px;padding:2px 7px;border-radius:10px;background:var(--color-background-tertiary);color:var(--color-text-secondary);border:1px solid var(--color-border-tertiary)}
+.empty{text-align:center;padding:32px;color:var(--color-text-tertiary);font-size:14px}
+.counter{font-size:12px;color:var(--color-text-tertiary);margin-left:auto;white-space:nowrap}
+</style>
+<div class="wrap">
+<div class="search-bar">
+  <input id="srch" placeholder="Buscar por RF, nombre o actor..." oninput="render()">
+  <span class="counter" id="cnt"></span>
+</div>
+<div class="filters">
+  <span class="pill active" data-f="todos" onclick="setFilter(this)">Todos</span>
+  <span class="pill" data-f="Esencial" onclick="setFilter(this)">Esencial</span>
+  <span class="pill" data-f="Deseable" onclick="setFilter(this)">Deseable</span>
+  <span class="pill" data-f="Jefe de Planta" onclick="setFilter(this)">Jefe de Planta</span>
+  <span class="pill" data-f="Operario" onclick="setFilter(this)">Operario</span>
+  <span class="pill" data-f="Analista de Calidad" onclick="setFilter(this)">Analista de Calidad</span>
+</div>
+<div id="list"></div>
+</div>
+<script>
+const data=[
+{id:"RF-01",nombre:"Carga de Mallas Logísticas",prioridad:"Esencial",actores:["Jefe de Planta"],
+nombre_cu:"Cargar archivo de malla logística",
+objetivo:"Permitir que el jefe de planta cargue un archivo PDF o Excel con la malla logística para que el sistema extraiga sedes, rutas y cantidades automáticamente.",
+precondiciones:["El usuario ha iniciado sesión con rol Jefe de Planta","El archivo PDF o Excel tiene estructura uniforme y válida"],
+flujo_principal:["El jefe de planta accede al módulo de Mallas Logísticas","Selecciona o arrastra un archivo PDF o Excel en el área de Drag & Drop","El sistema valida formato y estructura del archivo","El sistema extrae sedes, rutas y cantidades automáticamente","El sistema muestra una barra de progreso durante la carga","El sistema confirma la carga exitosa y despliega los datos extraídos"],
+flujos_alt:["Si el archivo tiene formato inválido: el sistema muestra mensaje de error con el motivo","Si el archivo supera el tiempo límite de 10 segundos: el sistema notifica timeout y permite reintentar"],
+postcondiciones:["La malla logística queda registrada en el sistema","Los datos de sedes, rutas y cantidades están disponibles para órdenes de producción"],
+excepciones:["Archivo corrupto","Estructura de columnas distinta a la esperada"]},
+
+{id:"RF-02",nombre:"Gestión de Usuarios",prioridad:"Esencial",actores:["Jefe de Planta","Sistema"],
+nombre_cu:"Autenticar usuario y gestionar accesos por rol",
+objetivo:"Permitir el ingreso seguro al sistema mediante credenciales y JWT, asignando vistas y funciones según el rol del usuario.",
+precondiciones:["El usuario tiene credenciales registradas en el sistema","El servidor de autenticación está disponible"],
+flujo_principal:["El usuario ingresa nombre de usuario y contraseña en la pantalla de Login","El sistema valida credenciales contra la base de datos","El sistema genera un token JWT y lo asocia a la sesión","El sistema redirige al usuario al dashboard correspondiente a su rol","Angular Guards restringen la navegación según el perfil activo"],
+flujos_alt:["Si las credenciales son incorrectas: el sistema muestra mensaje de error y permite 3 reintentos","Si el token JWT expira: el sistema redirige al login y solicita nueva autenticación"],
+postcondiciones:["El usuario queda autenticado con sesión activa","Las rutas de la aplicación se habilitan o bloquean según el rol asignado"],
+excepciones:["Credenciales inválidas","Token expirado","Usuario bloqueado por intentos fallidos"]},
+
+{id:"RF-03",nombre:"Gestión de Producción",prioridad:"Esencial",actores:["Jefe de Planta"],
+nombre_cu:"Crear y gestionar órdenes de producción",
+objetivo:"Permitir al jefe de planta crear órdenes de producción vinculadas a rutas logísticas de la malla cargada.",
+precondiciones:["Existe al menos una malla logística cargada y vigente","El usuario tiene sesión activa con rol Jefe de Planta"],
+flujo_principal:["El jefe de planta accede al módulo de Producción","Visualiza las órdenes activas en la tabla de órdenes","Selecciona 'Nueva orden' e ingresa los datos requeridos (ruta, producto, turno)","Asocia la orden a una ruta de la malla logística cargada","El sistema valida los datos e incluye la orden en la lista de órdenes activas"],
+flujos_alt:["Si no hay mallas cargadas: el sistema informa que se debe cargar primero una malla","Si los datos son incompletos: el sistema señala los campos faltantes"],
+postcondiciones:["La orden de producción queda registrada y visible para los operarios","La orden está lista para asociarse a un lote de impresión"],
+excepciones:["Ruta no encontrada en la malla","Datos obligatorios ausentes"]},
+
+{id:"RF-04",nombre:"Orquestación de Lotes y API BarTender",prioridad:"Esencial",actores:["Jefe de Planta","Sistema","BarTender API"],
+nombre_cu:"Generar lote e imprimir etiquetas via BarTender",
+objetivo:"Generar automáticamente un ID de lote con código de barras y enviarlo a BarTender respetando el orden original del archivo cargado para iniciar la impresión de etiquetas.",
+precondiciones:["Existe una orden de producción activa","El software BarTender está instalado y operativo","La red está disponible para comunicación con la API"],
+flujo_principal:["El jefe de planta accede al módulo de Lotes y Etiquetas","Selecciona una orden activa y pulsa 'Generar Lote'","El sistema crea un ID de lote único y genera el código de barras correspondiente","El sistema envía los datos a la API de BarTender respetando el orden del archivo","BarTender procesa la petición e inicia la impresión de etiquetas","El sistema muestra la previsualización de la etiqueta generada"],
+flujos_alt:["Si BarTender no responde: el sistema guarda el lote en cola y reintenta automáticamente","Si el orden del archivo no puede ser determinado: el sistema lanza alerta al operador"],
+postcondiciones:["El lote queda registrado con ID único y código de barras","Las etiquetas están siendo impresas por BarTender"],
+excepciones:["API de BarTender no disponible","Error de comunicación de red","Orden de archivo indeterminada"]},
+
+{id:"RF-05",nombre:"Captura y Descuento Secuencial",prioridad:"Esencial",actores:["Operario de Planta","Sistema","Lector de Código de Barras"],
+nombre_cu:"Escanear bolsas y descontar cuota de sede",
+objetivo:"Permitir al operario escanear bolsas mediante lector HID de forma secuencial, validando cada código y descontando automáticamente la cuota asignada a cada sede.",
+precondiciones:["Existe un lote activo generado y aprobado para escaneo","El lector de código de barras HID está configurado y conectado","El operario tiene sesión activa"],
+flujo_principal:["El operario accede al módulo de Escaneo HID","El sistema muestra el estado 'HID Ready' y el contador de cuota por sede","El operario escanea una bolsa con el lector","El sistema captura el código, lo valida contra el lote activo","El sistema descuenta una unidad de la cuota de la sede correspondiente","El log de escaneos en tiempo real se actualiza con el registro"],
+flujos_alt:["Si el código ya fue escaneado: el sistema alerta duplicado y no descuenta","Si la cuota de la sede se agota: el sistema notifica cuota completa"],
+postcondiciones:["La bolsa queda registrada como escaneada","La cuota de la sede se reduce en la cantidad escaneada","El inventario operativo se actualiza"],
+excepciones:["Código de barras ilegible","Lote sin cuota disponible","Lector HID desconectado"]},
+
+{id:"RF-06",nombre:"Gestión de Inventario Operativo",prioridad:"Deseable",actores:["Jefe de Planta","Sistema"],
+nombre_cu:"Consultar y actualizar inventario real en tiempo real",
+objetivo:"Permitir al jefe de planta visualizar el estado actual del inventario real, el cual se actualiza automáticamente con cada escaneo registrado.",
+precondiciones:["Se han realizado al menos un escaneo en el turno activo","El usuario tiene sesión activa con permiso de visualización de inventario"],
+flujo_principal:["El jefe de planta accede al módulo de Inventario Real","El sistema muestra tarjetas con Stock Teórico vs. Stock Real por sede","El jefe de planta selecciona una sede para ver detalle de existencias","El sistema actualiza los datos cada vez que se registra un nuevo escaneo","El jefe de planta puede exportar la vista actual del inventario"],
+flujos_alt:["Si no hay escaneos registrados: el sistema muestra el stock teórico del PDF como referencia"],
+postcondiciones:["El jefe de planta tiene visibilidad del inventario actualizado","Las diferencias entre stock teórico y real son visibles"],
+excepciones:["Sin conexión a la base de datos","Turno no iniciado"]},
+
+{id:"RF-07",nombre:"Gestión de Calidad",prioridad:"Esencial",actores:["Analista de Calidad"],
+nombre_cu:"Aprobar o rechazar lotes en control de calidad",
+objetivo:"Permitir al analista de calidad revisar los lotes pendientes y aprobarlos o rechazarlos antes de que el stock sea liberado para despacho.",
+precondiciones:["Existe al menos un lote con estado 'Pendiente por Liberación de Calidad'","El usuario tiene sesión activa con rol Analista de Calidad"],
+flujo_principal:["El analista accede al módulo de Control de Calidad","El sistema lista los lotes pendientes de revisión","El analista selecciona un lote y revisa su información (cantidad, mermas, trazabilidad)","El analista pulsa 'Aprobar' (verde) o 'Rechazar' (rojo) según el resultado","El sistema actualiza el estado del lote","Si aprueba: el lote pasa a estado 'Listo para despacho'; si rechaza: queda bloqueado"],
+flujos_alt:["Si el analista rechaza: puede ingresar observaciones del motivo del rechazo","Si el lote tiene mermas registradas: el sistema las muestra como parte de la revisión"],
+postcondiciones:["El lote tiene estado definitivo (aprobado o rechazado)","El stock solo puede liberarse si el lote fue aprobado"],
+excepciones:["Lote con datos incompletos","Analista sin permisos suficientes"]},
+
+{id:"RF-08",nombre:"Liberación de Stock",prioridad:"Deseable",actores:["Jefe de Planta","Analista de Calidad"],
+nombre_cu:"Liberar inventario tras aprobación de calidad",
+objetivo:"Garantizar que el inventario solo se libere para despacho una vez que el analista de calidad haya aprobado el lote correspondiente.",
+precondiciones:["El lote fue previamente aprobado por el analista de calidad","El turno está cerrado (estado 'Pendiente por Liberación de Calidad')"],
+flujo_principal:["El jefe de planta accede al módulo de Liberación","El sistema muestra la tabla de lotes con estado 'Listo para despacho'","El jefe de planta selecciona el lote y pulsa el botón de liberación","El sistema verifica que el lote tiene aprobación de calidad","El sistema libera el stock y lo marca como disponible para despacho","El sistema registra la liberación en el historial de trazabilidad"],
+flujos_alt:["Si el lote no tiene aprobación de calidad: el botón de liberación permanece bloqueado"],
+postcondiciones:["El stock queda disponible para despacho","El evento de liberación queda en el historial trazable"],
+excepciones:["Intento de liberación sin aprobación de calidad","Lote ya liberado previamente"]},
+
+{id:"RF-09",nombre:"Registro de Mermas Operativas",prioridad:"Esencial",actores:["Operario de Planta"],
+nombre_cu:"Registrar merma por código de barras dañado",
+objetivo:"Permitir al operario anular códigos de barras dañados durante el proceso de escaneo y descontarlos del inventario operativo.",
+precondiciones:["Existe un lote activo en proceso de escaneo","El operario tiene sesión activa"],
+flujo_principal:["El operario detecta una bolsa con código dañado o ilegible","El operario abre el modal 'Reportar Merma' desde la pantalla de escaneo","El operario ingresa o escanea el código afectado (si es posible)","El operario selecciona el motivo de la merma (código dañado, bolsa rota, error de impresión, etc.)","El sistema registra la merma, anula el código y descuenta del inventario operativo","La merma queda registrada en el historial del lote"],
+flujos_alt:["Si el código es completamente ilegible: el operario ingresa manualmente la posición o número de bolsa","Si hay múltiples mermas seguidas: el sistema permite registrar de forma agrupada"],
+postcondiciones:["El código queda anulado en el sistema","El inventario operativo refleja la merma","El lote conserva trazabilidad de la unidad afectada"],
+excepciones:["Código no pertenece al lote activo","Motivo de merma no seleccionado"]},
+
+{id:"RF-10",nombre:"Trazabilidad de Producción",prioridad:"Deseable",actores:["Jefe de Planta","Analista de Calidad"],
+nombre_cu:"Consultar historial de lote y escaneos",
+objetivo:"Permitir a los usuarios autorizados consultar el historial completo de eventos de un lote o bolsa, incluyendo fecha, hora y operario responsable.",
+precondiciones:["Existe al menos un lote registrado con eventos en el historial","El usuario tiene sesión activa con permisos de trazabilidad"],
+flujo_principal:["El usuario accede al módulo de Trazabilidad","Ingresa el ID de lote o código de bolsa en el buscador","El sistema recupera y muestra la tabla de eventos asociados","Cada fila muestra: fecha, hora, tipo de evento, operario, estado resultante","El usuario puede filtrar por rango de fechas o tipo de evento","El usuario puede exportar el historial filtrado"],
+flujos_alt:["Si no hay eventos registrados para el criterio buscado: el sistema informa que no hay resultados"],
+postcondiciones:["El usuario tiene visibilidad completa del ciclo de vida del lote o bolsa"],
+excepciones:["ID de lote inexistente","Sin permisos para ver historial de otros turnos"]},
+
+{id:"RF-11",nombre:"Consolidación e Inmutabilidad",prioridad:"Esencial",actores:["Jefe de Planta","Sistema"],
+nombre_cu:"Cerrar turno y bloquear modificaciones al stock",
+objetivo:"Permitir al jefe de planta finalizar un turno de producción, generando el cierre formal que bloquea toda modificación al stock hasta la liberación de calidad.",
+precondiciones:["Existe un turno activo con escaneos registrados","El usuario tiene sesión activa con rol Jefe de Planta"],
+flujo_principal:["El jefe de planta accede al módulo de Inventario o Panel de Turno","Pulsa el botón 'Finalizar Turno'","El sistema muestra un mensaje de confirmación con resumen del turno","El jefe de planta confirma el cierre","El sistema cambia el estado del turno a 'Pendiente por Liberación de Calidad'","Todas las ediciones de stock quedan bloqueadas hasta aprobación de calidad"],
+flujos_alt:["Si existen mermas pendientes de registrar: el sistema advierte antes de permitir el cierre","Si el analista de calidad ya inició revisión: el sistema indica que el proceso está en curso"],
+postcondiciones:["El turno queda cerrado e inmutable","El lote pasa al flujo de control de calidad","No se pueden registrar más escaneos ni mermas en ese turno"],
+excepciones:["Cierre sin escaneos registrados","Turno ya cerrado previamente"]},
+
+{id:"RF-12",nombre:"Tablero de Control de Cuadrante",prioridad:"Esencial",actores:["Jefe de Planta"],
+nombre_cu:"Visualizar balance entre datos teóricos y reales",
+objetivo:"Mostrar al jefe de planta un tablero comparativo entre los datos teóricos del PDF y los datos reales escaneados, permitiendo detectar diferencias operativas.",
+precondiciones:["Existe al menos una malla logística cargada","Se han realizado escaneos en el turno activo"],
+flujo_principal:["El jefe de planta accede al Dashboard principal","El sistema muestra tarjetas KPI con métricas de eficiencia operativa","El sistema presenta gráficas de barras de Balance de Masa (teórico vs. real por sede)","El jefe de planta puede seleccionar filtros de fecha o turno para ajustar la vista","El tablero se actualiza en tiempo real conforme se registran nuevos escaneos"],
+flujos_alt:["Si no hay datos de escaneo aún: el tablero muestra solo los datos teóricos de la malla cargada"],
+postcondiciones:["El jefe de planta tiene visibilidad operativa del balance de masa en tiempo real","Las desviaciones entre teórico y real son identificables visualmente"],
+excepciones:["Sin malla logística cargada","Sin datos de escaneo disponibles para el turno seleccionado"]}
+];
+
+let currentFilter="todos";
+
+function setFilter(el){
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  currentFilter=el.dataset.f;
+  render();
+}
+
+function toggle(id){
+  const b=document.getElementById('b'+id);
+  const c=document.getElementById('c'+id);
+  if(b.classList.contains('open')){b.classList.remove('open');c.textContent='›';}
+  else{b.classList.add('open');c.textContent='‹';}
+}
+
+function render(){
+  const q=document.getElementById('srch').value.toLowerCase();
+  const filtered=data.filter(d=>{
+    const matchFilter=currentFilter==='todos'||d.prioridad===currentFilter||d.actores.some(a=>a.includes(currentFilter));
+    const matchSearch=!q||d.id.toLowerCase().includes(q)||d.nombre.toLowerCase().includes(q)||d.nombre_cu.toLowerCase().includes(q)||d.actores.join(' ').toLowerCase().includes(q);
+    return matchFilter&&matchSearch;
+  });
+  document.getElementById('cnt').textContent=filtered.length+' de '+data.length;
+  const el=document.getElementById('list');
+  if(!filtered.length){el.innerHTML='<div class="empty">No se encontraron casos de uso con ese criterio.</div>';return;}
+  el.innerHTML=filtered.map(d=>`
+<div class="cu-card">
+  <div class="cu-header" onclick="toggle('${d.id}')">
+    <div class="cu-badge badge-${d.prioridad.toLowerCase()}">${d.id}</div>
+    <div class="cu-title">
+      <div class="cu-rf">${d.nombre}</div>
+      <div class="cu-name">${d.nombre_cu}</div>
+      <div class="cu-actor">Actores: ${d.actores.join(', ')}</div>
+    </div>
+    <span class="cu-badge badge-${d.prioridad.toLowerCase()}">${d.prioridad}</span>
+    <span class="chevron" id="c${d.id}">›</span>
+  </div>
+  <div class="cu-body" id="b${d.id}">
+    <div class="cu-section">
+      <div class="cu-label">Objetivo</div>
+      <div class="cu-text">${d.objetivo}</div>
+    </div>
+    <div class="cu-section">
+      <div class="cu-label">Precondiciones</div>
+      <ul class="cu-list">${d.precondiciones.map(p=>`<li>${p}</li>`).join('')}</ul>
+    </div>
+    <div class="cu-section">
+      <div class="cu-label">Flujo principal</div>
+      <ol class="cu-list">${d.flujo_principal.map(f=>`<li>${f}</li>`).join('')}</ol>
+    </div>
+    <div class="cu-section">
+      <div class="cu-label">Flujos alternativos / excepciones</div>
+      <ul class="cu-list">${d.flujos_alt.map(f=>`<li>${f}</li>`).join('')}</ul>
+    </div>
+    <div class="cu-section">
+      <div class="cu-label">Postcondiciones</div>
+      <ul class="cu-list">${d.postcondiciones.map(p=>`<li>${p}</li>`).join('')}</ul>
+    </div>
+    <div class="cu-section">
+      <div class="cu-label">Excepciones del sistema</div>
+      <div class="tag-row">${d.excepciones.map(e=>`<span class="tag">${e}</span>`).join('')}</div>
+    </div>
+  </div>
+</div>`).join('');
+}
+render();
+</script>

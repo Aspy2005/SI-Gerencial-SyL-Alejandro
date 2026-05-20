@@ -1,0 +1,22 @@
+# Dependencias
+node_modules/
+jspm_packages/
+web_elements/
+
+# Variables de entorno y credenciales (¡Seguridad!)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+credentials.json
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Carpetas de compilación o caché
+dist/
+build/
+.cache/

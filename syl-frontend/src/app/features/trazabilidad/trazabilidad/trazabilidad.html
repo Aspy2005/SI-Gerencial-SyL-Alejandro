@@ -1,0 +1,126 @@
+<!-- ── RF-10 TRAZABILIDAD DE PRODUCCIÓN ───────────────────────────── -->
+
+<div class="trz-page">
+
+  <!-- Buscador -->
+  <div class="card mb16">
+    <div class="card-head">
+      <span>🗺️</span>
+      <span class="card-title">Consulta de Trazabilidad</span>
+      <span class="rf-tag">RF-10</span>
+    </div>
+    <div class="card-body">
+      <div class="search-row">
+        <input
+          class="form-input"
+          placeholder="Buscar por código de lote (LOT-…), código de barras o sede…"
+          [(ngModel)]="query"
+          (keydown)="onKeydown($event)"
+        />
+        <button class="btn btn-primary" (click)="buscar()" [disabled]="cargando">
+          <span *ngIf="cargando">⏳</span>
+          <span *ngIf="!cargando">Buscar</span>
+        </button>
+      </div>
+      <div class="form-hint">
+        Ingresa el código de lote (ej. <span class="mono">LOT-A1B2C3D4</span>),
+        código de barras (<span class="mono">770000100001</span>) o nombre de sede.
+      </div>
+    </div>
+  </div>
+
+  <!-- Estado vacío / cargando / error -->
+  <div class="empty-state card" *ngIf="!resultado && !cargando && !error">
+    <div class="empty-icon">🗺️</div>
+    <div class="empty-title">Sin resultados aún</div>
+    <div class="empty-sub">Usa el buscador para consultar el historial de un lote o bolsa.</div>
+  </div>
+
+  <div class="empty-state card" *ngIf="cargando">
+    <div class="empty-icon spin">⏳</div>
+    <div class="empty-title">Consultando historial…</div>
+  </div>
+
+  <div class="alert-danger card" *ngIf="error && !cargando">
+    <span>⚠️</span> {{ error }}
+  </div>
+
+  <!-- Resultado -->
+  <ng-container *ngIf="resultado && !cargando">
+
+    <!-- Header del lote encontrado -->
+    <div class="card mb16">
+      <div class="card-body lote-header">
+        <div class="lote-id mono text-accent">{{ resultado.codigo_lote }}</div>
+        <div class="lote-meta">
+          <span class="lote-producto">{{ resultado.producto }}</span>
+          <span class="badge"
+            [ngClass]="{
+              'badge-green':  resultado.calidad_estado === 'aprobado',
+              'badge-danger': resultado.calidad_estado === 'rechazado',
+              'badge-warn':   resultado.calidad_estado === 'pendiente'
+            }">
+            {{ resultado.calidad_estado | titlecase }}
+          </span>
+          <span class="badge badge-muted">{{ resultado.cantidad }} uds</span>
+        </div>
+
+        <!-- Detalle de bolsa si aplica -->
+        <div class="bolsa-detail" *ngIf="resultado.bolsa">
+          <div class="bolsa-row">
+            <span class="muted">Código bolsa</span>
+            <span class="mono">{{ resultado.bolsa.codigo_bolsa }}</span>
+          </div>
+          <div class="bolsa-row">
+            <span class="muted">Código de barras</span>
+            <span class="mono">{{ resultado.bolsa.codigo_barras }}</span>
+          </div>
+          <div class="bolsa-row">
+            <span class="muted">Sede</span>
+            <span>{{ resultado.bolsa.sede }} — {{ resultado.bolsa.ciudad }}</span>
+          </div>
+          <div class="bolsa-row">
+            <span class="muted">Escaneada</span>
+            <span class="badge" [ngClass]="resultado.bolsa.escaneada ? 'badge-green' : 'badge-warn'">
+              {{ resultado.bolsa.escaneada ? 'Sí' : 'No' }}
+            </span>
+          </div>
+          <div class="bolsa-row" *ngIf="resultado.bolsa.fecha_escaneo">
+            <span class="muted">Fecha escaneo</span>
+            <span class="mono">{{ resultado.bolsa.fecha_escaneo | date:'dd/MM/yy HH:mm' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Línea de tiempo -->
+    <div class="card">
+      <div class="card-head">
+        <span>📋</span>
+        <span class="card-title">Historial Completo — {{ resultado.codigo_lote }}</span>
+      </div>
+      <div class="card-body">
+        <div class="timeline" *ngIf="resultado.eventos.length > 0; else sinEventos">
+          <div class="tl-item" *ngFor="let ev of resultado.eventos">
+            <div class="tl-dot" [ngClass]="dotClass(ev.tipo)"></div>
+            <div class="tl-content">
+              <div class="tl-text">
+                <span class="tl-icon">{{ iconoEvento(ev.tipo) }}</span>
+                {{ ev.descripcion }}
+              </div>
+              <div class="tl-time">
+                {{ ev.fecha | date:'dd/MM/yy HH:mm' }}
+                <ng-container *ngIf="ev.usuario"> — {{ ev.usuario }}</ng-container>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ng-template #sinEventos>
+          <p class="muted" style="font-size:13px;">No hay eventos registrados para este lote.</p>
+        </ng-template>
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>

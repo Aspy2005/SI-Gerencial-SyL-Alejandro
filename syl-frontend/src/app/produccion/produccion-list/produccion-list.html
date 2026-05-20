@@ -1,0 +1,414 @@
+<div>
+
+  <div class="section-head">
+
+    <div class="section-title">
+      Órdenes de Producción
+    </div>
+
+    <button
+      class="btn btn-primary"
+      (click)="openModal()"
+    >
+      + Nueva Orden
+    </button>
+
+  </div>
+
+  <!-- TABLA -->
+  <div class="card">
+
+    <div class="card-head">
+      <span>⚙️</span>
+      <span class="card-title">Órdenes Activas</span>
+      <span class="rf-tag">RF-03</span>
+    </div>
+
+    <div style="overflow-x:auto;">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Orden</th>
+            <th>Producto</th>
+            <th>Ruta Logística</th>
+            <th>Cantidad</th>
+            <th>Turno</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          @if (ordenes.length === 0) {
+
+            <tr>
+
+              <td
+                colspan="7"
+                style="
+                  text-align:center;
+                  color:var(--muted);
+                  padding:24px;
+                "
+              >
+                No hay órdenes registradas
+              </td>
+
+            </tr>
+
+          }
+
+          @for (orden of ordenes; track orden.id) {
+
+            <tr>
+
+              <td class="mono text-accent">
+                {{ orden.codigo_orden }}
+              </td>
+
+              <td>
+                {{ orden.producto }}
+              </td>
+
+              <td>
+                {{ orden.malla_nombre }}
+              </td>
+
+              <td>
+                {{ orden.cantidad }}
+              </td>
+
+              <td>
+                {{ orden.turno_display }}
+              </td>
+
+              <td>
+
+                <span
+                  class="badge"
+                  [ngClass]="ESTADO_CLASS[orden.estado]"
+                >
+                  {{ orden.estado_display }}
+                </span>
+
+              </td>
+
+              <td>
+
+                <div style="display:flex;gap:6px;">
+
+                  @if (orden.estado === 'pendiente') {
+
+                    <button
+                      class="btn btn-outline btn-sm"
+                      (click)="cambiarEstado(orden, 'programada')"
+                    >
+                      Programar
+                    </button>
+
+                  }
+
+                  @if (orden.estado === 'programada') {
+
+                    <button
+                      class="btn btn-outline btn-sm"
+                      (click)="cambiarEstado(orden, 'en_produccion')"
+                    >
+                      Iniciar
+                    </button>
+
+                  }
+
+                  @if (orden.estado === 'en_produccion') {
+
+                    <button
+                      class="btn btn-outline btn-sm"
+                      (click)="cambiarEstado(orden, 'completada')"
+                    >
+                      Completar
+                    </button>
+
+                  }
+
+                  @if (
+                    orden.estado !== 'completada'
+                    && orden.estado !== 'cancelada'
+                  ) {
+
+                    <button
+                      class="btn btn-outline btn-sm"
+                      style="
+                        color:var(--danger);
+                        border-color:var(--danger);
+                      "
+                      (click)="cambiarEstado(orden, 'cancelada')"
+                    >
+                      Cancelar
+                    </button>
+
+                  }
+
+                </div>
+
+              </td>
+
+            </tr>
+
+          }
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- FORMULARIO -->
+@if (showModal) {
+
+  <div
+    class="card"
+    style="
+      margin-top:16px;
+      border:1px solid var(--accent);
+    "
+  >
+
+    <div class="card-head">
+
+      <span>⚙️</span>
+
+      <span class="card-title">
+        Nueva Orden de Producción
+      </span>
+
+      <button
+        type="button"
+        class="btn btn-outline btn-sm"
+        style="margin-left:auto;"
+        (click)="closeModal()"
+      >
+        ✕ Cerrar
+      </button>
+
+    </div>
+
+    <div style="padding:24px;">
+
+      <form [formGroup]="form">
+
+        <!-- PRODUCTO -->
+        <div class="form-group">
+
+          <label class="form-label">
+            Producto
+          </label>
+
+          <input
+            class="form-input"
+            placeholder="Ej: Bolsa Leche 1L"
+            formControlName="producto"
+          >
+
+          @if (invalid('producto')) {
+
+            <div class="form-error">
+              Campo requerido
+            </div>
+
+          }
+
+        </div>
+
+        <!-- MALLA -->
+        <div class="form-group">
+
+          <label class="form-label">
+            Malla Logística
+          </label>
+
+          <select
+            class="form-input"
+            formControlName="malla"
+            (change)="onMallaChange($event)"
+          >
+
+            <option [ngValue]="null" disabled>
+              Seleccione una malla activa
+            </option>
+
+            @for (malla of mallas; track malla.id) {
+
+              <option [value]="malla.id">
+                {{ malla.nombre_ruta }}
+              </option>
+
+            }
+
+          </select>
+
+          @if (invalid('malla')) {
+
+            <div class="form-error">
+              Seleccione una malla
+            </div>
+
+          }
+
+          @if (mallas.length === 0) {
+
+            <div
+              class="form-hint"
+              style="color:var(--warn);"
+            >
+              ⚠ No hay mallas activas. Cargue una malla primero.
+            </div>
+
+          }
+
+        </div>
+
+        <!-- GRID -->
+        <div class="grid-2">
+
+          <!-- CANTIDAD -->
+          <div class="form-group">
+
+            <label class="form-label">
+              Cantidad
+            </label>
+
+            <input
+  class="form-input"
+  type="number"
+  placeholder="0"
+  formControlName="cantidad"
+  readonly
+>
+
+            @if (invalid('cantidad')) {
+
+              <div class="form-error">
+                Ingrese una cantidad válida
+              </div>
+
+            }
+
+          </div>
+
+          <!-- TURNO -->
+          <div class="form-group">
+
+            <label class="form-label">
+              Turno
+            </label>
+
+            <select
+              class="form-input"
+              formControlName="turno"
+            >
+
+              <option value="" disabled>
+                Seleccione
+              </option>
+
+              <option value="manana">
+                Mañana
+              </option>
+
+              <option value="tarde">
+                Tarde
+              </option>
+
+              <option value="noche">
+                Noche
+              </option>
+
+            </select>
+
+            @if (invalid('turno')) {
+
+              <div class="form-error">
+                Seleccione un turno
+              </div>
+
+            }
+
+          </div>
+
+        </div>
+
+        <!-- ERROR -->
+        @if (errorMsg) {
+
+          <div
+            style="
+              margin-top:12px;
+              padding:10px;
+              background:rgba(255,76,106,.1);
+              border:1px solid rgba(255,76,106,.3);
+              border-radius:6px;
+              color:var(--danger);
+              font-size:12px;
+            "
+          >
+            {{ errorMsg }}
+          </div>
+
+        }
+
+        <!-- BOTONES -->
+        <div
+          style="
+            display:flex;
+            justify-content:flex-end;
+            gap:8px;
+            margin-top:20px;
+          "
+        >
+
+          <button
+            type="button"
+            class="btn btn-outline"
+            (click)="closeModal()"
+            [disabled]="submitting"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="submitOrden()"
+            [disabled]="submitting || mallas.length === 0"
+          >
+
+            @if (submitting) {
+
+              Creando…
+
+            } @else {
+
+              Crear Orden
+
+            }
+
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+}

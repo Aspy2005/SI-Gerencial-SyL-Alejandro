@@ -1,0 +1,161 @@
+<div class="dash-page">
+
+  <!-- Cabecera -->
+  <div class="section-head mb16">
+    <div class="section-title">Gestión de Usuarios</div>
+    <button class="btn btn-primary" (click)="abrirNuevo()">+ Nuevo Usuario</button>
+  </div>
+
+  <!-- Layout inline: tabla + formulario lado a lado -->
+  <div [class]="mostrarForm ? 'grid-2' : ''">
+
+    <!-- ── Tabla ─────────────────────────────────────────── -->
+    <div class="card">
+      <div class="card-head">
+        <span>👥</span>
+        <span class="card-title">Usuarios del Sistema</span>
+        <span class="rf-tag">RF-02</span>
+        <span class="muted" style="margin-left:auto; font-size:11px;">
+          Control por roles — RNF-03
+        </span>
+        <button class="btn btn-outline btn-sm" (click)="cargar()" style="margin-left:12px;">
+          ↺
+        </button>
+      </div>
+
+      <!-- Skeleton -->
+      <div *ngIf="cargando" class="skeleton-wrap">
+        <div class="skeleton-row" *ngFor="let s of [1,2,3,4]"></div>
+      </div>
+
+      <p class="muted" style="padding:20px; font-size:13px;"
+         *ngIf="!cargando && usuarios.length === 0">
+        No hay usuarios registrados.
+      </p>
+
+      <table *ngIf="!cargando && usuarios.length > 0">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Nombre</th>
+            <th *ngIf="!mostrarForm">Rol</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of usuarios"
+              [class.row-active]="editandoId === u.id">
+
+            <td class="mono">
+              {{ u.username }}
+              <span *ngIf="esMiPerfil(u)" class="badge badge-blue"
+                    style="margin-left:6px; font-size:10px;">Tú</span>
+            </td>
+
+            <td>{{ u.first_name }} {{ u.last_name }}</td>
+
+            <td *ngIf="!mostrarForm">
+              <span class="badge" [ngClass]="rolBadge(u.rol)">
+                {{ rolLabel(u.rol) }}
+              </span>
+            </td>
+
+            <td>
+              <span class="badge" [ngClass]="u.activo ? 'badge-green' : 'badge-muted'">
+                {{ u.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+
+            <td>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-outline btn-sm" (click)="abrirEdicion(u)">
+                  Editar
+                </button>
+                <button class="btn btn-sm"
+                        [ngClass]="u.activo ? 'btn-danger' : 'btn-outline'"
+                        [disabled]="esMiPerfil(u)"
+                        [title]="esMiPerfil(u) ? 'No puedes desactivarte a ti mismo' : ''"
+                        (click)="toggleActivo(u)">
+                  {{ u.activo ? 'Desactivar' : 'Activar' }}
+                </button>
+              </div>
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Formulario inline ─────────────────────────────── -->
+    <div class="card" *ngIf="mostrarForm">
+      <div class="card-head">
+        <span>{{ modoEdicion ? '✏️' : '👤' }}</span>
+        <span class="card-title">
+          {{ modoEdicion ? 'Editar Usuario' : 'Nuevo Usuario' }}
+        </span>
+        <button class="btn btn-outline btn-sm" (click)="cerrarForm()"
+                style="margin-left:auto;">✕ Cancelar</button>
+      </div>
+
+      <div class="card-body">
+
+        <!-- Error -->
+        <div class="alert-danger" *ngIf="errorMsg">⚠️ {{ errorMsg }}</div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Nombre</label>
+            <input class="form-input" [(ngModel)]="form.first_name" placeholder="Juan">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Apellido</label>
+            <input class="form-input" [(ngModel)]="form.last_name" placeholder="Pérez">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Username *</label>
+          <input class="form-input" [(ngModel)]="form.username"
+                 placeholder="jperez" [disabled]="modoEdicion">
+          <div class="form-hint" *ngIf="modoEdicion">El username no puede modificarse.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Correo *</label>
+          <input class="form-input" [(ngModel)]="form.email"
+                 type="email" placeholder="jperez@sl.com">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Rol *</label>
+          <div class="role-selector">
+            <div class="role-opt"
+                 *ngFor="let r of roles"
+                 [class.sel]="form.rol === r.value"
+                 (click)="form.rol = r.value">
+              <div class="role-icon">{{ r.icon }}</div>
+              <div class="role-name">{{ r.label }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="!modoEdicion">
+          <label class="form-label">Contraseña *</label>
+          <input class="form-input" [(ngModel)]="form.password"
+                 type="password" placeholder="••••••••">
+          <div class="form-hint">🔒 JWT — RNF-02</div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+          <button class="btn btn-outline" (click)="cerrarForm()">Cancelar</button>
+          <button class="btn btn-primary" (click)="guardar()" [disabled]="guardando">
+            {{ guardando ? 'Guardando…' : (modoEdicion ? 'Guardar Cambios' : 'Crear Usuario') }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>

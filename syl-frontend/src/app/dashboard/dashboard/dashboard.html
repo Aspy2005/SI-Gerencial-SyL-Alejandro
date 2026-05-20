@@ -1,0 +1,185 @@
+<!-- ── RF-12 TABLERO DE CONTROL DE CUADRANTE ─────────────────────── -->
+
+<div class="dash-page">
+
+  <!-- 1. Estado del turno -->
+  <div class="card mb16">
+  <div class="card-head">
+    <span style="font-size:15px">🔄</span>
+    <span class="card-title">Estado del Turno Actual</span>
+    <span class="rf-tag">RF-12</span>
+    <span class="badge badge-warn" style="margin-left:auto;">
+      Turno {{ turnoActual }} — {{ turnoHorario }}
+    </span>
+  </div>
+  <div class="card-body">
+    <div class="steps">
+      <div
+        class="step"
+        *ngFor="let paso of pasos; let i = index"
+        [ngClass]="pasoClass(i)"
+      >
+        <div class="step-circle">{{ pasoLabel(i) }}</div>
+        <div class="step-label" [innerHTML]="paso.label.replace('\n','<br>')"></div>
+      </div>
+    </div>
+
+    <!-- Botón cierre de turno -->
+    <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+
+      <div
+        *ngIf="pasoActual < 5"
+        style="font-size:13px; color:var(--muted); align-self:center; margin-right:12px;"
+      >
+        Completa todos los pasos para cerrar el turno
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="pasoActual < 5 || turnoCerrado"
+        (click)="cerrarTurno()"
+        [style.opacity]="pasoActual < 5 ? '0.4' : '1'"
+      >
+        {{ turnoCerrado ? '✅ Turno Cerrado' : '🔒 Cerrar Turno' }}
+      </button>
+      
+    </div>
+  </div>
+</div>
+
+  <!-- 2. KPIs -->
+  <div class="grid-4 mb16">
+
+    <div class="card">
+      <div class="kpi">
+        <div class="kpi-label">Bolsas Producidas</div>
+        <div class="kpi-value text-accent">
+          {{ cargando ? '—' : (bolsasProducidas | number) }}
+        </div>
+        <div class="kpi-sub muted">Stock teórico total</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="kpi">
+        <div class="kpi-label">Bolsas Escaneadas</div>
+        <div class="kpi-value text-blue">
+          {{ cargando ? '—' : (bolsasEscaneadas | number) }}
+        </div>
+        <div class="kpi-sub">
+          <span class="muted">{{ porcentajeEscaneo }}% completado</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="kpi">
+        <div class="kpi-label">Mermas Registradas</div>
+        <div class="kpi-value text-warn">
+          {{ cargando ? '—' : (kpis.mermas | number) }}
+        </div>
+        <div class="kpi-sub muted">En el turno actual</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="kpi">
+        <div class="kpi-label">Lotes Liberados</div>
+        <div class="kpi-value">
+          {{ cargando ? '—' : lotesLiberados + '/' + lotesTotal }}
+        </div>
+        <div class="kpi-sub muted">
+          {{ cargando ? '' : (lotesTotal - lotesLiberados) + ' pendientes calidad' }}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 3. Balance de masa + Actividad reciente -->
+  <div class="grid-2">
+
+    <!-- Balance por sede -->
+    <div class="card">
+      <div class="card-head">
+        <span>⚖️</span>
+        <span class="card-title">Balance de Masa — Cuadrante</span>
+        <span class="rf-tag">RF-12</span>
+      </div>
+      <div class="card-body">
+
+        <!-- Esqueleto mientras carga -->
+        <ng-container *ngIf="cargando">
+          <div class="prog-row skeleton" *ngFor="let s of [1,2,3,4]"></div>
+        </ng-container>
+
+        <!-- Sin sedes -->
+        <p class="muted" style="font-size:13px" *ngIf="!cargando && sedes.length === 0">
+          No hay datos de sedes para el turno actual.
+        </p>
+
+        <!-- Sedes reales -->
+        <div class="prog-row" *ngFor="let sede of sedes; last as isLast"
+             [style.margin-bottom]="isLast ? '0' : ''">
+          <div class="prog-meta">
+            <span>{{ sede.sede }}</span>
+            <span class="mono">{{ sede.escaneadas }} / {{ sede.total }} uds</span>
+          </div>
+          <div class="prog-track">
+            <div class="prog-fill" [ngClass]="barraColor(sede.porcentaje)"
+                 [style.width]="sede.porcentaje + '%'"></div>
+          </div>
+          <div class="prog-pct" [ngClass]="barraColor(sede.porcentaje).replace('fill-', 'text-')">
+            {{ sede.porcentaje }}%
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Actividad reciente (RF-10 feed) -->
+    <div class="card">
+  <div class="card-head">
+    <span>📡</span>
+    <span class="card-title">Actividad Reciente</span>
+    <span class="rf-tag">RF-10</span>
+    <button class="btn btn-outline btn-sm" style="margin-left:auto"
+            (click)="cargar()">↺ Actualizar</button>
+  </div>
+  <div class="card-body" style="padding:0; max-height:380px; overflow-y:auto;">
+
+    <ng-container *ngIf="cargando">
+      <div class="tl-item skeleton" *ngFor="let s of [1,2,3,4,5]"
+           style="margin:12px 20px;"></div>
+    </ng-container>
+
+    <p class="muted" style="padding:20px;font-size:13px"
+       *ngIf="!cargando && actividad.length === 0">
+      Sin actividad registrada aún.
+    </p>
+
+    <div class="actividad-feed" *ngIf="!cargando && actividad.length > 0">
+      <div class="feed-item" *ngFor="let ev of actividad">
+        <div class="feed-icono">{{ ev.icono }}</div>
+        <div class="feed-contenido">
+          <div class="feed-desc">{{ ev.descripcion }}</div>
+          <div class="feed-meta">
+            <span class="badge btn-sm" [ngClass]="moduloBadge(ev.modulo)">
+              {{ ev.modulo }}
+            </span>
+            <span class="feed-tiempo mono">
+              {{ formatFechaCompleta(ev.fecha) }}
+            </span>
+            <span class="feed-usuario muted">— {{ ev.usuario }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  </div>
+
+</div>

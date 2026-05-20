@@ -1,0 +1,407 @@
+<div (click)="enfocarInput()">
+
+  <!-- ══ INPUT OCULTO — fallback HID/teclado ═══════════════════ -->
+  <input
+    #scanInput
+    type="text"
+    autocomplete="off"
+    style="
+      position: fixed;
+      top: -9999px;
+      left: -9999px;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+      pointer-events: none;
+    "
+    (keydown)="onScanKeydown($event)"
+  />
+
+  <!-- ══ CABECERA ════════════════════════════════════════════════ -->
+  <div class="section-head">
+    <div>
+      <div class="section-title">Escaneo Secuencial</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;">
+        Sistema S&amp;L › Escaneo
+      </div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
+      <div class="status-pill">
+        <span class="dot" [style.background]="procesando ? 'var(--warn)' : 'var(--accent)'"></span>
+        {{ procesando ? 'Procesando...' : 'Sistema Activo' }}
+      </div>
+      <button type="button" class="btn btn-outline btn-sm" (click)="limpiarLog()">
+        Limpiar log
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ GRID PRINCIPAL ══════════════════════════════════════════ -->
+  <div class="grid-2" style="align-items:start;">
+
+    <!-- ── COLUMNA IZQUIERDA ───────────────────────────────────── -->
+    <div>
+
+      <!-- ── Card: Estación de Escaneo ── -->
+      <div class="card mb16">
+        <div class="card-head">
+          <span>🔍</span>
+          <span class="card-title">Estación de Escaneo</span>
+          <span class="rf-tag">RF-05</span>
+          <span
+            class="badge"
+            style="margin-left:auto;"
+            [ngClass]="camaraBadgeClass"
+          >
+            {{ camaraLabel }}
+          </span>
+        </div>
+
+        <div class="card-body">
+
+          <!-- Selector de lote activo -->
+          <div class="form-group">
+            <label class="form-label">Lote Activo</label>
+            <select
+              class="form-input"
+              (change)="onLoteChange($event)"
+              (click)="$event.stopPropagation()"
+            >
+              <option *ngFor="let lote of lotes" [value]="lote.id">
+                {{ lote.codigo_lote }} — {{ lote.producto }}
+              </option>
+            </select>
+          </div>
+
+          <!-- ── Controles de cámara ─────────────────────────── -->
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+
+            <!-- Botón activar/desactivar -->
+            <button
+              type="button"
+              class="btn"
+              [class.btn-primary]="!mostrarCamara"
+              [class.btn-outline]="mostrarCamara"
+              [disabled]="camaraStatus === 'requesting'"
+              (click)="toggleCamara(); $event.stopPropagation()"
+            >
+              {{ mostrarCamara ? '⏹ Detener cámara' : '📷 Activar cámara' }}
+            </button>
+
+            <!-- Selector de cámara (si hay varias) -->
+            <select
+              *ngIf="camaras.length > 1"
+              class="form-input"
+              style="flex:1;min-width:140px;"
+              [(ngModel)]="camaraActiva"
+              (change)="onCamaraChange($event)"
+              (click)="$event.stopPropagation()"
+            >
+              <option *ngFor="let cam of camaras" [value]="cam.deviceId">
+                {{ cam.label || 'Cámara ' + (camaras.indexOf(cam) + 1) }}
+              </option>
+            </select>
+          </div>
+
+          <!-- ── Visor de cámara ─────────────────────────────── -->
+          <div
+            *ngIf="mostrarCamara"
+            style="
+              position: relative;
+              border-radius: 10px;
+              overflow: hidden;
+              background: #000;
+              margin-bottom: 12px;
+            "
+          >
+            <!-- Stream de video -->
+            <video
+  #cameraVideo
+  autoplay
+  muted
+  playsinline
+  style="
+    width:100%;
+    max-height:280px;
+    object-fit:contain;
+    background:#000;
+  "
+></video>
+
+            <!-- Overlay: línea de escaneo animada -->
+            <div
+              *ngIf="camaraStatus === 'active'"
+              style="
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+              "
+            >
+              <!-- Marco de guía centrado -->
+              <div style="
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -60%);
+                width: 200px;
+                height: 120px;
+                border: 2px solid rgba(255,255,255,0.6);
+                border-radius: 8px;
+              ">
+                <!-- Línea de escaneo -->
+                <div class="scanner-line" style="
+                  position: absolute;
+                  left: 0; right: 0;
+                  height: 2px;
+                  background: var(--accent, #00e5a0);
+                  box-shadow: 0 0 6px var(--accent, #00e5a0);
+                "></div>
+              </div>
+              <!-- Última lectura sobre el video -->
+              <div
+                *ngIf="ultimaBolsa"
+                style="
+                  position: absolute;
+                  bottom: 8px;
+                  left: 0; right: 0;
+                  text-align: center;
+                  font-size: 11px;
+                  color: #fff;
+                  background: rgba(0,0,0,.5);
+                  padding: 3px 0;
+                "
+              >
+                ✔ {{ ultimaBolsa.codigo_barras }}
+              </div>
+            </div>
+
+            <!-- Overlay: iniciando -->
+            <div
+              *ngIf="camaraStatus === 'requesting'"
+              style="
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(0,0,0,.6);
+                font-size: 13px;
+                color: #fff;
+              "
+            >
+              Iniciando cámara...
+            </div>
+          </div>
+
+          <!-- Cámara inactiva: box decorativo -->
+          <div
+            *ngIf="!mostrarCamara"
+            class="scanner-box"
+            [class.active]="camaraStatus === 'idle'"
+          >
+            <div class="scanner-icon">📷</div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:6px;">
+              Cámara del PC
+            </div>
+            <div style="font-size:12px;color:var(--muted);">
+              Pulsa "Activar cámara" para iniciar el escaneo
+            </div>
+            <div
+              *ngIf="ultimaBolsa"
+              class="mono"
+              style="margin-top:12px;font-size:11px;color:var(--accent);"
+            >
+              Última lectura: {{ ultimaBolsa.codigo_barras }}
+            </div>
+          </div>
+
+          <!-- Error de cámara -->
+          <div
+            *ngIf="camaraError"
+            style="
+              margin-top:10px;
+              padding:10px 14px;
+              background:rgba(255,76,106,.08);
+              border:1px solid rgba(255,76,106,.25);
+              border-radius:8px;
+              font-size:12px;
+              color:var(--danger);
+            "
+          >
+            ⚠ {{ camaraError }}
+          </div>
+
+          <!-- Error de escaneo (backend) -->
+          <div
+            *ngIf="errorMsg"
+            style="
+              margin-top:10px;
+              padding:10px 14px;
+              background:rgba(255,76,106,.08);
+              border:1px solid rgba(255,76,106,.25);
+              border-radius:8px;
+              font-size:12px;
+              color:var(--danger);
+            "
+          >
+            ⚠ {{ errorMsg }}
+          </div>
+
+          <!-- Progreso global del lote activo -->
+          <div class="mt16" *ngIf="progresoActual">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:12px;font-weight:600;">
+                Progreso del lote {{ loteActivo?.codigo_lote }}
+              </span>
+              <span class="mono" style="font-size:12px;">
+                {{ progresoActual.escaneadas }} / {{ progresoActual.total }}
+              </span>
+            </div>
+            <div class="prog-track" style="height:10px;">
+              <div
+                class="prog-fill fill-green"
+                [style.width]="porcentajeWidth(progresoActual.escaneadas, progresoActual.total)"
+              ></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--muted);">
+              <span>{{ progresoActual.pendientes }} unidades restantes</span>
+              <span>{{ porcentaje(progresoActual.escaneadas, progresoActual.total) }}% completado</span>
+            </div>
+          </div>
+
+        </div><!-- /card-body estación -->
+      </div><!-- /card estación -->
+
+      <!-- ── Card: Merma Rápida ── -->
+      <div class="card">
+        <div class="card-head">
+          <span>⚠️</span>
+          <span class="card-title">Registro de Merma Rápida</span>
+          <span class="rf-tag">RF-09</span>
+        </div>
+
+        <div class="card-body">
+
+          <div class="form-group">
+            <label class="form-label">Código Dañado</label>
+            <input
+              class="form-input"
+              type="text"
+              placeholder="Ingresa o escanea el código dañado…"
+              [(ngModel)]="mermaCodigoBarras"
+              (keydown)="onMermaKeydown($event)"
+              (click)="$event.stopPropagation()"
+              autocomplete="off"
+            />
+            <div *ngIf="mermaError" class="form-error" style="display:block;">
+              {{ mermaError }}
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Motivo</label>
+            <select
+              class="form-input"
+              [(ngModel)]="mermaMotivo"
+              (click)="$event.stopPropagation()"
+            >
+              <option *ngFor="let m of MOTIVOS_MERMA" [value]="m">
+                {{ m }}
+              </option>
+            </select>
+          </div>
+
+        </div><!-- /card-body merma -->
+
+        <div style="padding:12px 20px;border-top:1px solid var(--border);">
+          <button
+            type="button"
+            class="btn btn-danger"
+            [disabled]="mermaSubmitting"
+            (click)="registrarMerma()"
+          >
+            {{ mermaSubmitting ? 'Registrando...' : 'Registrar Merma' }}
+          </button>
+        </div>
+
+      </div><!-- /card merma -->
+
+    </div><!-- /columna izquierda -->
+
+    <!-- ── COLUMNA DERECHA — Log ───────────────────────────────── -->
+    <div class="card" style="height:100%;">
+      <div class="card-head">
+        <span>📋</span>
+        <span class="card-title">Log de Escaneos Recientes</span>
+        <span class="rf-tag">RF-10</span>
+        <span class="badge badge-blue" style="margin-left:auto;">
+          {{ logDelLoteActivo.length }}
+        </span>
+      </div>
+
+      <div style="max-height:560px;overflow-y:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Código</th>
+              <th>Hora</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="logDelLoteActivo.length === 0">
+              <td colspan="4" style="text-align:center;padding:32px;color:var(--muted);">
+                Sin escaneos en esta sesión
+              </td>
+            </tr>
+            <tr *ngFor="let item of logDelLoteActivo">
+              <td class="mono">{{ item.num }}</td>
+              <td class="mono text-accent">{{ item.codigo }}</td>
+              <td class="mono">{{ item.timestamp | date:'HH:mm:ss' }}</td>
+              <td>
+                <span class="badge" [ngClass]="badgeEstado(item.estado)">
+                  {{ labelEstado(item.estado) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pie: stats de sesión -->
+      <div
+        style="
+          padding:12px 20px;
+          border-top:1px solid var(--border);
+          display:flex;
+          gap:16px;
+          font-size:11px;
+          color:var(--muted);
+        "
+      >
+        <span>
+          ✅ OK:
+          <strong style="color:var(--accent);">
+            {{ logDelLoteActivo | countByEstado:'ok' }}
+          </strong>
+        </span>
+        <span>
+          ⚠ Duplicados:
+          <strong style="color:var(--warn);">
+            {{ logDelLoteActivo | countByEstado:'duplicado' }}
+          </strong>
+        </span>
+        <span>
+          ❌ Mermas:
+          <strong style="color:var(--danger);">
+            {{ logDelLoteActivo | countByEstado:'merma' }}
+          </strong>
+        </span>
+      </div>
+
+    </div><!-- /columna derecha -->
+
+  </div><!-- /grid-2 -->
+
+</div><!-- /root -->

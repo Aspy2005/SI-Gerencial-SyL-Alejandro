@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1024">
+<title>Sistema Inteligente de Gestión de Producción y Despacho Logístico — Prototipo UI</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0D0F14;
+    --surface:   #141720;
+    --surface2:  #1C2030;
+    --border:    #2A2F42;
+    --accent:    #00E5A0;
+    --accent2:   #4C9EFF;
+    --warn:      #FFB340;
+    --danger:    #FF4C6A;
+    --text:      #E8EAF0;
+    --muted:     #6B7290;
+    --sidebar-w: 230px;
+    --header-h:  56px;
+  }
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'IBM Plex Sans', sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow:hidden; }
+
+  /* ── LAYOUT ─────────────────────────────────────────── */
+  .shell { display:flex; height:100vh; }
+  .sidebar { width:var(--sidebar-w); background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
+  .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .topbar { height:var(--header-h); background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 24px; gap:16px; flex-shrink:0; }
+  .content { flex:1; overflow-y:auto; padding:24px; }
+
+  /* ── SIDEBAR ─────────────────────────────────────────── */
+  .brand { padding:16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+  .brand-icon { width:32px; height:32px; background:var(--accent); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#000; font-family:'IBM Plex Mono', monospace; flex-shrink:0; }
+  .brand-text { font-size:11px; font-weight:600; line-height:1.3; color:var(--text); }
+  .brand-sub  { font-size:10px; color:var(--muted); font-weight:400; }
+
+  .nav-section { padding:8px 0; }
+  .nav-label { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); padding:8px 16px 4px; font-weight:600; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:9px 16px; cursor:pointer; font-size:13px; color:var(--muted); border-left:3px solid transparent; transition:all .15s; user-select:none; }
+  .nav-item:hover { background:rgba(255,255,255,.04); color:var(--text); }
+  .nav-item.active { background:rgba(0,229,160,.07); color:var(--accent); border-left-color:var(--accent); }
+  .nav-item .ico { font-size:15px; width:18px; text-align:center; }
+  .nav-badge { margin-left:auto; background:var(--accent); color:#000; font-size:10px; font-weight:700; border-radius:10px; padding:1px 7px; font-family:'IBM Plex Mono', monospace; }
+
+  .sidebar-footer { margin-top:auto; padding:12px 16px; border-top:1px solid var(--border); }
+  .user-chip { display:flex; align-items:center; gap:10px; font-size:12px; }
+  .avatar { width:30px; height:30px; border-radius:50%; background:var(--accent2); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; color:#fff; flex-shrink:0; }
+  .user-info .name { font-weight:600; font-size:12px; }
+  .user-info .role { font-size:10px; color:var(--muted); }
+
+  /* ── TOPBAR ─────────────────────────────────────────── */
+  .page-title { font-size:15px; font-weight:600; }
+  .breadcrumb { font-size:11px; color:var(--muted); margin-left:4px; }
+  .topbar-right { margin-left:auto; display:flex; align-items:center; gap:12px; }
+  .status-pill { display:flex; align-items:center; gap:6px; font-size:11px; font-family:'IBM Plex Mono', monospace; padding:4px 10px; border-radius:20px; background:rgba(0,229,160,.1); color:var(--accent); border:1px solid rgba(0,229,160,.25); }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--accent); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:.3; } }
+  .icon-btn { width:34px; height:34px; border-radius:8px; background:var(--surface2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; color:var(--muted); transition:.15s; }
+  .icon-btn:hover { color:var(--text); background:var(--border); }
+
+  /* ── PAGE PANELS ─────────────────────────────────────── */
+  .page { display:none; animation:fadeIn .25s ease; }
+  .page.active { display:block; }
+  @keyframes fadeIn { from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:translateY(0); } }
+
+  /* ── CARDS & GRIDS ────────────────────────────────────── */
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; }
+  .card-head { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
+  .card-title { font-size:13px; font-weight:600; }
+  .card-body { padding:16px 20px; }
+
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+  .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+
+  /* KPI */
+  .kpi { padding:20px; }
+  .kpi-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; font-weight:500; }
+  .kpi-value { font-size:28px; font-weight:600; font-family:'IBM Plex Mono', monospace; margin:4px 0; line-height:1; }
+  .kpi-sub { font-size:11px; display:flex; align-items:center; gap:4px; }
+  .kpi-up { color:var(--accent); } .kpi-down { color:var(--danger); }
+
+  /* PROGRESS BAR */
+  .prog-row { margin-bottom:14px; }
+  .prog-meta { display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px; }
+  .prog-track { height:6px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+  .prog-fill { height:100%; border-radius:3px; transition:width .6s ease; }
+  .fill-green { background:var(--accent); }
+  .fill-blue  { background:var(--accent2); }
+  .fill-warn  { background:var(--warn); }
+  .fill-danger{ background:var(--danger); }
+
+  /* TABLES */
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th { text-align:left; padding:10px 12px; color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--border); background:var(--surface); }
+  td { padding:10px 12px; border-bottom:1px solid rgba(42,47,66,.6); vertical-align:middle; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,.02); }
+
+  /* BADGES */
+  .badge { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:20px; font-size:11px; font-weight:600; }
+  .badge-green  { background:rgba(0,229,160,.12); color:var(--accent); }
+  .badge-blue   { background:rgba(76,158,255,.12); color:var(--accent2); }
+  .badge-warn   { background:rgba(255,179,64,.12); color:var(--warn); }
+  .badge-danger { background:rgba(255,76,106,.12); color:var(--danger); }
+  .badge-muted  { background:rgba(107,114,144,.12); color:var(--muted); }
+
+  /* BUTTONS */
+  .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:7px; font-size:13px; font-weight:600; cursor:pointer; border:none; transition:.15s; }
+  .btn-primary { background:var(--accent); color:#000; }
+  .btn-primary:hover { background:#00ffb3; }
+  .btn-outline { background:transparent; color:var(--text); border:1px solid var(--border); }
+  .btn-outline:hover { background:var(--surface2); }
+  .btn-danger  { background:rgba(255,76,106,.15); color:var(--danger); border:1px solid rgba(255,76,106,.3); }
+  .btn-sm { padding:5px 10px; font-size:11px; }
+
+  /* INPUTS */
+  .form-group { margin-bottom:16px; }
+  .form-label { display:block; font-size:12px; font-weight:500; color:var(--muted); margin-bottom:6px; }
+  .form-input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:7px; padding:9px 12px; font-size:13px; color:var(--text); font-family:inherit; transition:.15s; }
+  .form-input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,229,160,.1); }
+  .form-input.error { border-color:var(--danger); }
+  .form-error { font-size:11px; color:var(--danger); margin-top:4px; display:flex; align-items:center; gap:4px; }
+  .form-hint  { font-size:11px; color:var(--muted); margin-top:4px; }
+
+  /* SCANNER AREA */
+  .scanner-box { border:2px dashed var(--border); border-radius:12px; padding:32px; text-align:center; transition:.3s; position:relative; overflow:hidden; }
+  .scanner-box.active { border-color:var(--accent); background:rgba(0,229,160,.04); }
+  .scanner-icon { font-size:40px; margin-bottom:12px; }
+  .scanner-line { position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); animation:scan 1.8s linear infinite; display:none; }
+  .scanner-box.active .scanner-line { display:block; }
+  @keyframes scan { from{ transform:translateY(0); } to{ transform:translateY(130px); } }
+
+  /* TIMELINE */
+  .timeline { position:relative; padding-left:20px; }
+  .timeline::before { content:''; position:absolute; left:6px; top:0; bottom:0; width:1px; background:var(--border); }
+  .tl-item { position:relative; margin-bottom:16px; }
+  .tl-dot { position:absolute; left:-17px; top:3px; width:10px; height:10px; border-radius:50%; border:2px solid var(--accent); background:var(--bg); }
+  .tl-dot.done { background:var(--accent); border-color:var(--accent); }
+  .tl-dot.warn { border-color:var(--warn); }
+  .tl-text { font-size:12px; color:var(--text); }
+  .tl-time { font-size:11px; color:var(--muted); font-family:'IBM Plex Mono', monospace; }
+
+  /* UPLOAD ZONE */
+  .upload-zone { border:2px dashed var(--border); border-radius:10px; padding:40px 20px; text-align:center; cursor:pointer; transition:.2s; }
+  .upload-zone:hover { border-color:var(--accent2); background:rgba(76,158,255,.04); }
+  .upload-title { font-size:14px; font-weight:600; margin-bottom:4px; }
+  .upload-sub   { font-size:12px; color:var(--muted); }
+
+  /* MISC */
+  .section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .section-title { font-size:14px; font-weight:600; }
+  .mt8 { margin-top:8px; } .mt16 { margin-top:16px; } .mt24 { margin-top:24px; }
+  .mb16 { margin-bottom:16px; }
+  .gap8 { gap:8px; } .gap12 { gap:12px; }
+  .flex { display:flex; } .flex-center { display:flex; align-items:center; } .between { justify-content:space-between; }
+  .muted { color:var(--muted); font-size:12px; }
+  .mono { font-family:'IBM Plex Mono', monospace; }
+  .text-accent { color:var(--accent); }
+  .text-blue   { color:var(--accent2); }
+  .text-warn   { color:var(--warn); }
+  .text-danger { color:var(--danger); }
+
+  /* TOOLTIP RF BADGE */
+  .rf-tag { font-size:9px; font-family:'IBM Plex Mono', monospace; background:rgba(76,158,255,.15); color:var(--accent2); border:1px solid rgba(76,158,255,.3); border-radius:4px; padding:1px 5px; margin-left:auto; flex-shrink:0; }
+
+  /* LOGIN */
+  .login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); background-image: radial-gradient(ellipse 60% 40% at 50% -10%, rgba(0,229,160,.08) 0%, transparent 70%); }
+  .login-box { width:380px; }
+  .login-logo { text-align:center; margin-bottom:32px; }
+  .login-logo-icon { width:52px; height:52px; background:var(--accent); border-radius:12px; display:inline-flex; align-items:center; justify-content:center; font-size:24px; font-weight:700; color:#000; font-family:'IBM Plex Mono', monospace; margin-bottom:12px; }
+  .login-logo-name { font-size:16px; font-weight:600; }
+  .login-logo-sub  { font-size:12px; color:var(--muted); }
+  .login-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:32px; }
+  .login-title { font-size:18px; font-weight:700; margin-bottom:4px; }
+  .login-subtitle { font-size:13px; color:var(--muted); margin-bottom:24px; }
+  .role-selector { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:20px; }
+  .role-opt { border:1px solid var(--border); border-radius:8px; padding:10px 8px; text-align:center; cursor:pointer; transition:.15s; font-size:11px; }
+  .role-opt:hover { border-color:var(--accent); }
+  .role-opt.sel  { border-color:var(--accent); background:rgba(0,229,160,.07); color:var(--accent); }
+  .role-opt .role-icon { font-size:20px; margin-bottom:4px; }
+  .role-opt .role-name { font-weight:600; font-size:11px; }
+
+  /* STEP INDICATOR */
+  .steps { display:flex; gap:0; margin-bottom:24px; }
+  .step  { flex:1; display:flex; flex-direction:column; align-items:center; position:relative; }
+  .step:not(:last-child)::after { content:''; position:absolute; top:13px; left:50%; right:-50%; height:1px; background:var(--border); z-index:0; }
+  .step-circle { width:26px; height:26px; border-radius:50%; border:2px solid var(--border); background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; font-family:'IBM Plex Mono', monospace; z-index:1; color:var(--muted); }
+  .step.done .step-circle  { background:var(--accent); border-color:var(--accent); color:#000; }
+  .step.active .step-circle{ background:var(--surface); border-color:var(--accent2); color:var(--accent2); }
+  .step-label { font-size:10px; color:var(--muted); margin-top:5px; text-align:center; }
+  .step.done .step-label { color:var(--accent); }
+  .step.active .step-label{ color:var(--accent2); }
+
+  /* DONUT CHART (CSS only) */
+  .donut-wrap { position:relative; width:120px; height:120px; margin:0 auto; }
+  .donut-wrap svg { transform:rotate(-90deg); }
+  .donut-center { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; }
+  .donut-center .val { font-size:22px; font-weight:700; font-family:'IBM Plex Mono', monospace; color:var(--accent); line-height:1; }
+  .donut-center .sub { font-size:10px; color:var(--muted); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:10px; }
+
+  /* NOTIFICATION PANEL */
+  .notif { display:flex; gap:10px; padding:12px 16px; border-bottom:1px solid var(--border); align-items:flex-start; font-size:12px; }
+  .notif-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
+  .notif-title { font-weight:600; margin-bottom:2px; }
+  .notif-time  { font-size:11px; color:var(--muted); }
+
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:100; display:none; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:14px; width:480px; max-width:90vw; }
+  .modal-head { padding:20px 24px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+  .modal-title { font-size:15px; font-weight:700; }
+  .modal-close { width:28px; height:28px; border-radius:6px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; }
+  .modal-body { padding:24px; }
+  .modal-foot { padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:8px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ LOGIN ══════════════════ -->
+<div id="loginPage" class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">SL</div>
+      <div class="login-logo-name">Sistema Inteligente S&amp;L</div>
+      <div class="login-logo-sub">Gestión de Producción y Despacho Logístico</div>
+    </div>
+    <div class="login-card">
+      <div class="login-title">Iniciar Sesión</div>
+      <div class="login-subtitle">Selecciona tu perfil y accede al sistema</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:600;">Perfil de acceso <span class="rf-tag" style="margin-left:4px;">RF-02</span></div>
+      <div class="role-selector">
+        <div class="role-opt sel" onclick="selectRole(this)">
+          <div class="role-icon">🏭</div>
+          <div class="role-name">Jefe de Planta</div>
+        </div>
+        <div class="role-opt" onclick="selectRole(this)">
+          <div class="role-icon">🔧</div>
+          <div class="role-name">Operario</div>
+        </div>
+        <div class="role-opt" onclick="selectRole(this)">
+          <div class="role-icon">🔬</div>
+          <div class="role-name">Analista Calidad</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Usuario</label>
+        <input class="form-input" type="text" placeholder="usuario@empresa.com" id="loginUser" oninput="validateLogin()">
+      </div>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label class="form-label">Contraseña</label>
+        <input class="form-input" type="password" placeholder="••••••••" id="loginPass" oninput="validateLogin()">
+        <div class="form-hint">🔒 Autenticación JWT — RNF-02</div>
+      </div>
+      <div id="loginError" class="form-error" style="margin-bottom:12px;display:none;">⚠ Credenciales incorrectas. Intenta nuevamente.</div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="doLogin()">Ingresar al Sistema →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ APP SHELL ══════════════════ -->
+<div id="appShell" class="shell" style="display:none;">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">SL</div>
+      <div>
+        <div class="brand-text">Sistema S&amp;L</div>
+        <div class="brand-sub">Producción &amp; Logística</div>
+      </div>
+    </div>
+
+    <div class="nav-section" style="overflow-y:auto;flex:1;">
+      <div class="nav-label">Principal</div>
+      <div class="nav-item active" onclick="navigate('dashboard',this)"><span class="ico">📊</span> Dashboard <span class="rf-tag">RF-12</span></div>
+      <div class="nav-item" onclick="navigate('mallas',this)"><span class="ico">📂</span> Mallas Logísticas <span class="rf-tag">RF-01</span></div>
+      <div class="nav-item" onclick="navigate('produccion',this)"><span class="ico">⚙️</span> Producción <span class="rf-tag">RF-03</span></div>
+
+      <div class="nav-label">Operación</div>
+      <div class="nav-item" onclick="navigate('lotes',this)"><span class="ico">📦</span> Lotes &amp; Etiquetas <span class="rf-tag">RF-04</span></div>
+      <div class="nav-item" onclick="navigate('escaneo',this)"><span class="ico">🔍</span> Escaneo <span class="rf-tag">RF-05</span>
+        <span class="nav-badge" style="margin-left:4px;">3</span></div>
+      <div class="nav-item" onclick="navigate('inventario',this)"><span class="ico">🗃️</span> Inventario <span class="rf-tag">RF-06</span></div>
+      <div class="nav-item" onclick="navigate('mermas',this)"><span class="ico">⚠️</span> Mermas <span class="rf-tag">RF-09</span></div>
+
+      <div class="nav-label">Calidad</div>
+      <div class="nav-item" onclick="navigate('calidad',this)"><span class="ico">✅</span> Control de Calidad <span class="rf-tag">RF-07</span></div>
+      <div class="nav-item" onclick="navigate('liberacion',this)"><span class="ico">🔓</span> Liberación Stock <span class="rf-tag">RF-08</span></div>
+      <div class="nav-item" onclick="navigate('trazabilidad',this)"><span class="ico">🗺️</span> Trazabilidad <span class="rf-tag">RF-10</span></div>
+
+      <div class="nav-label">Admin</div>
+      <div class="nav-item" onclick="navigate('usuarios',this)"><span class="ico">👥</span> Usuarios <span class="rf-tag">RF-02</span></div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">JP</div>
+        <div class="user-info">
+          <div class="name">Juan Pérez</div>
+          <div class="role">Jefe de Planta</div>
+        </div>
+        <span style="margin-left:auto;cursor:pointer;font-size:14px;color:var(--muted);" onclick="doLogout()" title="Cerrar sesión">⏻</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN AREA -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title" id="pageTitle">Dashboard General</div>
+        <div class="breadcrumb" id="pageBreadcrumb">Sistema S&L › Principal</div>
+      </div>
+      <div class="topbar-right">
+        <div class="status-pill"><div class="dot"></div> Sistema Activo</div>
+        <div class="icon-btn" title="Notificaciones" onclick="openModal('notifModal')">🔔</div>
+        <div class="icon-btn" title="Ayuda">❓</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── DASHBOARD RF-13 ───────────────────────────────── -->
+      <div id="page-dashboard" class="page active">
+        <!-- STEPS progress turno -->
+        <div class="card mb16">
+          <div class="card-head">
+            <span style="font-size:15px;">🔄</span>
+            <span class="card-title">Estado del Turno Actual</span>
+            <span class="rf-tag">RF-12</span>
+            <span class="badge badge-warn" style="margin-left:auto;">Turno Mañana — 06:00 a 14:00</span>
+          </div>
+          <div class="card-body">
+            <div class="steps">
+              <div class="step done"><div class="step-circle">✓</div><div class="step-label">Malla<br>Cargada</div></div>
+              <div class="step done"><div class="step-circle">✓</div><div class="step-label">Lotes<br>Generados</div></div>
+              <div class="step active"><div class="step-circle">3</div><div class="step-label">Escaneo<br>en Curso</div></div>
+              <div class="step"><div class="step-circle">4</div><div class="step-label">Calidad</div></div>
+              <div class="step"><div class="step-circle">5</div><div class="step-label">Liberación</div></div>
+              <div class="step"><div class="step-circle">6</div><div class="step-label">Cierre<br>Turno</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="grid-4 mb16">
+          <div class="card"><div class="kpi">
+            <div class="kpi-label">Bolsas Producidas</div>
+            <div class="kpi-value text-accent">8,420</div>
+            <div class="kpi-sub kpi-up">↑ +240 vs ayer</div>
+          </div></div>
+          <div class="card"><div class="kpi">
+            <div class="kpi-label">Bolsas Escaneadas</div>
+            <div class="kpi-value text-blue">7,195</div>
+            <div class="kpi-sub"><span style="color:var(--muted)">85.5% completado</span></div>
+          </div></div>
+          <div class="card"><div class="kpi">
+            <div class="kpi-label">Mermas Registradas</div>
+            <div class="kpi-value text-warn">47</div>
+            <div class="kpi-sub kpi-down">↑ +12 vs promedio</div>
+          </div></div>
+          <div class="card"><div class="kpi">
+            <div class="kpi-label">Lotes Liberados</div>
+            <div class="kpi-value">12/18</div>
+            <div class="kpi-sub kpi-up">6 pendientes calidad</div>
+          </div></div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Tablero Balance de Masa -->
+          <div class="card">
+            <div class="card-head"><span>⚖️</span><span class="card-title">Balance de Masa — Cuadrante</span><span class="rf-tag">RF-13</span></div>
+            <div class="card-body">
+              <div class="prog-row">
+                <div class="prog-meta"><span>Sede Centro</span><span class="mono">320 / 350 uds</span></div>
+                <div class="prog-track"><div class="prog-fill fill-green" style="width:91%"></div></div>
+              </div>
+              <div class="prog-row">
+                <div class="prog-meta"><span>Sede Norte</span><span class="mono">195 / 260 uds</span></div>
+                <div class="prog-track"><div class="prog-fill fill-blue" style="width:75%"></div></div>
+              </div>
+              <div class="prog-row">
+                <div class="prog-meta"><span>Sede Sur</span><span class="mono">410 / 410 uds</span></div>
+                <div class="prog-track"><div class="prog-fill fill-green" style="width:100%"></div></div>
+              </div>
+              <div class="prog-row">
+                <div class="prog-meta"><span>Sede Occidente</span><span class="mono">88 / 220 uds</span></div>
+                <div class="prog-track"><div class="prog-fill fill-warn" style="width:40%"></div></div>
+              </div>
+              <div class="prog-row" style="margin-bottom:0">
+                <div class="prog-meta"><span>Sede Oriente</span><span class="mono">0 / 180 uds</span></div>
+                <div class="prog-track"><div class="prog-fill fill-danger" style="width:3%"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Timeline actividad -->
+          <div class="card">
+            <div class="card-head"><span>📡</span><span class="card-title">Actividad Reciente</span><span class="rf-tag">RF-10</span></div>
+            <div class="card-body">
+              <div class="timeline">
+                <div class="tl-item">
+                  <div class="tl-dot done"></div>
+                  <div class="tl-text">Lote <strong>LOT-2024-0041</strong> aprobado por calidad</div>
+                  <div class="tl-time">09:47 — Analista Rodríguez</div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-dot done"></div>
+                  <div class="tl-text">Merma registrada — código dañado <strong>BC-00334</strong></div>
+                  <div class="tl-time">09:31 — Operario García</div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-dot"></div>
+                  <div class="tl-text">Escaneo secuencial iniciado — Sede Centro</div>
+                  <div class="tl-time">09:15 — Sistema automático</div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-dot done"></div>
+                  <div class="tl-text">Malla logística cargada — <strong>ruta_distribucion_may.xlsx</strong></div>
+                  <div class="tl-time">06:03 — Jefe Pérez</div>
+                </div>
+                <div class="tl-item" style="margin-bottom:0">
+                  <div class="tl-dot done"></div>
+                  <div class="tl-text">Turno Mañana iniciado y lotes generados</div>
+                  <div class="tl-time">06:00 — Sistema</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CARGA MALLAS RF-01 ───────────────────────────── -->
+      <div id="page-mallas" class="page">
+        <div class="grid-2">
+          <div>
+            <div class="card mb16">
+              <div class="card-head"><span>📤</span><span class="card-title">Cargar Nueva Malla</span><span class="rf-tag">RF-01</span></div>
+              <div class="card-body">
+                <div class="upload-zone" onclick="simulateUpload()" id="dropZone">
+                  <div style="font-size:36px;margin-bottom:10px;">📁</div>
+                  <div class="upload-title">Arrastra o haz clic para cargar</div>
+                  <div class="upload-sub">Formatos aceptados: .pdf, .xlsx — máx. 20 MB</div>
+                  <div class="upload-sub mt8" style="color:var(--accent2);">Procesamiento automático &lt; 10 seg — RNF rendimiento</div>
+                </div>
+                <div id="uploadProgress" style="display:none;margin-top:12px;">
+                  <div class="flex-center gap8 mb-8" style="margin-bottom:8px;">
+                    <span style="font-size:12px;">Procesando malla_dist_mayo.xlsx</span>
+                    <span class="badge badge-warn" style="margin-left:auto;">Procesando…</span>
+                  </div>
+                  <div class="prog-track" style="height:8px;">
+                    <div class="prog-fill fill-blue" id="uploadBar" style="width:0%;transition:width .2s;"></div>
+                  </div>
+                </div>
+                <div id="uploadDone" style="display:none;margin-top:12px;" class="flex-center gap8">
+                  <span style="color:var(--accent);font-size:16px;">✔</span>
+                  <span style="font-size:12px;">Malla procesada: <strong>34 sedes, 1,420 unidades detectadas</strong></span>
+                </div>
+              </div>
+            </div>
+            <!-- Formulario -->
+            <div class="card">
+              <div class="card-head"><span>⚙️</span><span class="card-title">Parámetros de Malla</span></div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label class="form-label">Nombre de la Ruta</label>
+                  <input class="form-input" value="Distribución Regional — Mayo 2026">
+                  <div class="form-hint">Identificador único de la malla logística</div>
+                </div>
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label class="form-label">Fecha de Distribución</label>
+                    <input class="form-input" type="date" value="2026-05-10">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Tipo de Archivo</label>
+                    <select class="form-input"><option>Excel (.xlsx)</option><option>PDF</option></select>
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label">Observaciones</label>
+                  <textarea class="form-input" style="resize:vertical;height:70px;" placeholder="Notas adicionales sobre la malla…"></textarea>
+                </div>
+              </div>
+              <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;">
+                <button class="btn btn-primary">Guardar Malla</button>
+                <button class="btn btn-outline">Cancelar</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span>🗂️</span><span class="card-title">Historial de Mallas</span></div>
+            <div style="overflow-x:auto;">
+              <table>
+                <thead><tr><th>Archivo</th><th>Fecha</th><th>Sedes</th><th>Estado</th><th></th></tr></thead>
+                <tbody>
+                  <tr><td class="mono" style="font-size:11px;">malla_may_2026.xlsx</td><td>08/05/26</td><td>34</td><td><span class="badge badge-green">✔ Activa</span></td><td><button class="btn btn-outline btn-sm">Ver</button></td></tr>
+                  <tr><td class="mono" style="font-size:11px;">malla_abr_2026.pdf</td><td>07/04/26</td><td>31</td><td><span class="badge badge-muted">Archivada</span></td><td><button class="btn btn-outline btn-sm">Ver</button></td></tr>
+                  <tr><td class="mono" style="font-size:11px;">malla_mar_2026.xlsx</td><td>10/03/26</td><td>29</td><td><span class="badge badge-muted">Archivada</span></td><td><button class="btn btn-outline btn-sm">Ver</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LOTES Y BARTENDER RF-04 ─────────────────────── -->
+      <div id="page-lotes" class="page">
+        <div class="section-head">
+          <div class="section-title">Gestión de Lotes &amp; API BarTender</div>
+          <div class="flex gap8">
+            <button class="btn btn-outline" onclick="openModal('loteModal')">+ Nuevo Lote</button>
+            <button class="btn btn-primary">Enviar a BarTender →</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span>📦</span><span class="card-title">Lotes del Turno Actual</span><span class="rf-tag">RF-04</span>
+            <span class="badge badge-blue" style="margin-left:auto;">18 lotes generados</span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr><th>ID Lote</th><th>Producto</th><th>Cantidad</th><th>BarTender</th><th>Calidad</th><th>Orden</th><th>Acciones</th></tr></thead>
+              <tbody>
+                <tr><td class="mono text-accent">LOT-2026-0041</td><td>Bolsa Leche 1L</td><td>320 uds</td><td><span class="badge badge-green">Enviado ✔</span></td><td><span class="badge badge-green">Aprobado</span></td><td class="mono">1</td><td><button class="btn btn-outline btn-sm">Ver</button></td></tr>
+                <tr><td class="mono text-accent">LOT-2026-0042</td><td>Bolsa Leche 500ml</td><td>260 uds</td><td><span class="badge badge-green">Enviado ✔</span></td><td><span class="badge badge-warn">Pendiente</span></td><td class="mono">2</td><td><button class="btn btn-outline btn-sm">Ver</button></td></tr>
+                <tr><td class="mono text-accent">LOT-2026-0043</td><td>Bolsa Leche 250ml</td><td>180 uds</td><td><span class="badge badge-warn">En Cola</span></td><td><span class="badge badge-muted">Sin iniciar</span></td><td class="mono">3</td><td><button class="btn btn-outline btn-sm">Ver</button></td></tr>
+                <tr><td class="mono text-accent">LOT-2026-0044</td><td>Yogur Natural</td><td>410 uds</td><td><span class="badge badge-green">Enviado ✔</span></td><td><span class="badge badge-green">Aprobado</span></td><td class="mono">4</td><td><button class="btn btn-outline btn-sm">Ver</button></td></tr>
+                <tr><td class="mono text-accent">LOT-2026-0045</td><td>Yogur Fresa</td><td>220 uds</td><td><span class="badge badge-danger">Error API</span></td><td><span class="badge badge-muted">Sin iniciar</span></td><td class="mono">5</td><td><button class="btn btn-danger btn-sm">Reintentar</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="padding:12px 20px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);">
+            ⚠ El orden de envío a BarTender respeta estrictamente el orden original del archivo cargado — RF-04
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ESCANEO RF-05 ────────────────────────────────── -->
+      <div id="page-escaneo" class="page">
+        <div class="grid-2">
+          <div>
+            <div class="card mb16">
+              <div class="card-head"><span>🔍</span><span class="card-title">Estación de Escaneo</span><span class="rf-tag">RF-05</span></div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label class="form-label">Lote Activo</label>
+                  <select class="form-input"><option>LOT-2026-0041 — Bolsa Leche 1L (Sede Centro)</option><option>LOT-2026-0042 — Bolsa Leche 500ml</option></select>
+                </div>
+                <div class="scanner-box active" id="scannerBox" onclick="simulateScan()">
+                  <div class="scanner-line"></div>
+                  <div class="scanner-icon">📷</div>
+                  <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Lector HID Activo</div>
+                  <div style="font-size:12px;color:var(--muted);">Apunte el lector al código de barras o haga clic para simular</div>
+                  <div style="margin-top:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);">Última lectura: BC-00391</div>
+                </div>
+
+                <div class="mt16">
+                  <div class="flex-center between mb-6" style="margin-bottom:6px;">
+                    <span style="font-size:12px;font-weight:600;">Progreso Sede Centro</span>
+                    <span class="mono" style="font-size:12px;">320 / 350</span>
+                  </div>
+                  <div class="prog-track" style="height:10px;">
+                    <div class="prog-fill fill-green" id="scanProg" style="width:91%;"></div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;margin-top:6px;">
+                    <span class="muted">30 unidades restantes</span>
+                    <span class="muted">Tiempo estimado: ~3 min</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><span>⚠️</span><span class="card-title">Registro de Merma Rápida</span><span class="rf-tag">RF-09</span></div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label class="form-label">Código Dañado</label>
+                  <input class="form-input" placeholder="Ingresa o escanea el código dañado…" id="mermaInput" oninput="validateMerma(this)">
+                  <div class="form-error" id="mermaError" style="display:none;">⚠ Código no encontrado en el lote activo</div>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Motivo</label>
+                  <select class="form-input"><option>Etiqueta ilegible</option><option>Bolsa dañada</option><option>Código duplicado</option><option>Otro</option></select>
+                </div>
+              </div>
+              <div style="padding:12px 20px;border-top:1px solid var(--border);">
+                <button class="btn btn-danger">Registrar Merma</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span>📋</span><span class="card-title">Log de Escaneos Recientes</span><span class="rf-tag">RF-10</span></div>
+            <div id="scanLog" style="max-height:480px;overflow-y:auto;">
+              <table>
+                <thead><tr><th>#</th><th>Código</th><th>Hora</th><th>Estado</th></tr></thead>
+                <tbody id="scanLogBody">
+                  <tr><td class="mono">391</td><td class="mono text-accent">BC-00391</td><td class="mono">09:52:14</td><td><span class="badge badge-green">OK</span></td></tr>
+                  <tr><td class="mono">390</td><td class="mono text-accent">BC-00390</td><td class="mono">09:52:09</td><td><span class="badge badge-green">OK</span></td></tr>
+                  <tr><td class="mono">389</td><td class="mono text-accent">BC-00334</td><td class="mono">09:31:02</td><td><span class="badge badge-danger">Merma</span></td></tr>
+                  <tr><td class="mono">388</td><td class="mono text-accent">BC-00388</td><td class="mono">09:30:58</td><td><span class="badge badge-green">OK</span></td></tr>
+                  <tr><td class="mono">387</td><td class="mono text-accent">BC-00387</td><td class="mono">09:30:51</td><td><span class="badge badge-green">OK</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CONTROL CALIDAD RF-07 ───────────────────────── -->
+      <div id="page-calidad" class="page">
+        <div class="section-head">
+          <div class="section-title">Control de Calidad — Aprobación de Lotes</div>
+          <span class="badge badge-warn">6 lotes pendientes de revisión</span>
+        </div>
+        <div class="card mb16">
+          <div class="card-head"><span>🔬</span><span class="card-title">Cola de Revisión</span><span class="rf-tag">RF-07</span></div>
+          <table>
+            <thead><tr><th>Lote</th><th>Producto</th><th>Uds Escaneadas</th><th>Mermas</th><th>% Integridad</th><th>Acciones</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="mono text-accent">LOT-2026-0042</td><td>Bolsa Leche 500ml</td><td>258</td><td>2</td>
+                <td><span class="badge badge-green">99.2%</span></td>
+                <td>
+                  <button class="btn btn-primary btn-sm" onclick="openModal('aprobarModal')">✓ Aprobar</button>
+                  <button class="btn btn-danger btn-sm" style="margin-left:4px;">✗ Rechazar</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="mono text-accent">LOT-2026-0043</td><td>Bolsa Leche 250ml</td><td>176</td><td>4</td>
+                <td><span class="badge badge-warn">97.8%</span></td>
+                <td>
+                  <button class="btn btn-primary btn-sm">✓ Aprobar</button>
+                  <button class="btn btn-danger btn-sm" style="margin-left:4px;">✗ Rechazar</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="mono text-accent">LOT-2026-0045</td><td>Yogur Fresa</td><td>211</td><td>9</td>
+                <td><span class="badge badge-danger">95.9%</span></td>
+                <td>
+                  <button class="btn btn-primary btn-sm">✓ Aprobar</button>
+                  <button class="btn btn-danger btn-sm" style="margin-left:4px;">✗ Rechazar</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span>📝</span><span class="card-title">Detalle de Inspección — LOT-2026-0042</span></div>
+          <div class="card-body grid-2">
+            <div>
+              <div style="margin-bottom:16px;">
+                <div class="form-label" style="margin-bottom:8px;">Criterios de Evaluación</div>
+                <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--accent);"> Integridad física del empaque</label>
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--accent);"> Legibilidad del código de barras</label>
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--accent);"> Concordancia de peso</label>
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" style="accent-color:var(--accent);"> Temperatura de almacenamiento</label>
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Observaciones del Analista</label>
+                <textarea class="form-input" style="resize:vertical;height:80px;" placeholder="Notas de la inspección…"></textarea>
+              </div>
+            </div>
+            <div>
+              <div class="donut-wrap" style="margin-bottom:16px;">
+                <svg viewBox="0 0 120 120" width="120" height="120">
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="var(--surface2)" stroke-width="14"/>
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="var(--accent)" stroke-width="14" stroke-dasharray="314 314" stroke-dashoffset="25"/>
+                </svg>
+                <div class="donut-center"><div class="val">99%</div><div class="sub">Integridad</div></div>
+              </div>
+              <div style="text-align:center;font-size:12px;color:var(--muted);">258 unidades inspeccionadas<br>2 mermas registradas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LIBERACIÓN STOCK RF-08 ──────────────────────── -->
+      <div id="page-liberacion" class="page">
+        <div class="card">
+          <div class="card-head"><span>🔓</span><span class="card-title">Liberación de Inventario</span><span class="rf-tag">RF-08</span>
+            <div style="margin-left:auto;font-size:11px;color:var(--muted);">Solo lotes con calidad aprobada pueden ser liberados</div>
+          </div>
+          <table>
+            <thead><tr><th>Lote</th><th>Producto</th><th>Cantidad</th><th>Calidad</th><th>Estado Stock</th><th>Acción</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="mono text-accent">LOT-2026-0041</td><td>Bolsa Leche 1L</td><td>320 uds</td>
+                <td><span class="badge badge-green">Aprobado</span></td>
+                <td><span class="badge badge-blue">Disponible para liberar</span></td>
+                <td><button class="btn btn-primary btn-sm" onclick="openModal('liberarModal')">🔓 Liberar</button></td>
+              </tr>
+              <tr>
+                <td class="mono text-accent">LOT-2026-0044</td><td>Yogur Natural</td><td>410 uds</td>
+                <td><span class="badge badge-green">Aprobado</span></td>
+                <td><span class="badge badge-green">Liberado ✔</span></td>
+                <td><button class="btn btn-outline btn-sm" disabled style="opacity:.5;cursor:not-allowed;">Liberado</button></td>
+              </tr>
+              <tr>
+                <td class="mono text-accent">LOT-2026-0042</td><td>Bolsa Leche 500ml</td><td>258 uds</td>
+                <td><span class="badge badge-warn">Pendiente</span></td>
+                <td><span class="badge badge-muted">Bloqueado — RF-12</span></td>
+                <td><button class="btn btn-outline btn-sm" disabled style="opacity:.5;cursor:not-allowed;">Bloqueado</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="padding:14px 20px;border-top:1px solid var(--border);background:rgba(255,179,64,.05);display:flex;align-items:center;gap:8px;border-radius:0 0 10px 10px;">
+            <span style="color:var(--warn);">⚠</span>
+            <span style="font-size:12px;color:var(--muted);">Los lotes con calidad <strong>pendiente o rechazada</strong> tienen el stock bloqueado para liberación — RF-12 Consolidación e Inmutabilidad</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── INVENTARIO RF-06 ────────────────────────────── -->
+      <div id="page-inventario" class="page">
+        <div class="grid-4 mb16">
+          <div class="card"><div class="kpi"><div class="kpi-label">Stock Total</div><div class="kpi-value text-accent">9,840</div><div class="kpi-sub muted">unidades</div></div></div>
+          <div class="card"><div class="kpi"><div class="kpi-label">Stock Liberado</div><div class="kpi-value text-blue">7,120</div><div class="kpi-sub muted">disponible despacho</div></div></div>
+          <div class="card"><div class="kpi"><div class="kpi-label">En Revisión</div><div class="kpi-value text-warn">2,673</div><div class="kpi-sub muted">pendiente calidad</div></div></div>
+          <div class="card"><div class="kpi"><div class="kpi-label">Mermas</div><div class="kpi-value text-danger">47</div><div class="kpi-sub muted">descontadas</div></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span>🗃️</span><span class="card-title">Inventario por Producto</span><span class="rf-tag">RF-06</span></div>
+          <table>
+            <thead><tr><th>Producto</th><th>Lotes</th><th>Stock Real</th><th>Stock Teórico</th><th>Diferencia</th><th>Estado</th></tr></thead>
+            <tbody>
+              <tr><td>Bolsa Leche 1L</td><td class="mono">3</td><td class="mono">960</td><td class="mono">960</td><td class="mono text-accent">0</td><td><span class="badge badge-green">Concilia</span></td></tr>
+              <tr><td>Bolsa Leche 500ml</td><td class="mono">4</td><td class="mono">1,040</td><td class="mono">1,044</td><td class="mono text-warn">-4</td><td><span class="badge badge-warn">Revisar</span></td></tr>
+              <tr><td>Yogur Natural 200g</td><td class="mono">5</td><td class="mono">2,050</td><td class="mono">2,050</td><td class="mono text-accent">0</td><td><span class="badge badge-green">Concilia</span></td></tr>
+              <tr><td>Yogur Fresa 200g</td><td class="mono">3</td><td class="mono">1,200</td><td class="mono">1,209</td><td class="mono text-danger">-9</td><td><span class="badge badge-danger">Diferencia</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── MERMAS RF-09 ────────────────────────────────── -->
+      <div id="page-mermas" class="page">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><span>⚠️</span><span class="card-title">Registrar Merma</span><span class="rf-tag">RF-09</span></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Código de barras a anular</label>
+                <input class="form-input" placeholder="Escanea o digita el código…">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Lote al que pertenece</label>
+                <select class="form-input"><option>LOT-2026-0041</option><option>LOT-2026-0042</option><option>LOT-2026-0043</option></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tipo de Merma</label>
+                <select class="form-input"><option>Daño físico</option><option>Código ilegible</option><option>Código duplicado</option><option>Error etiquetado</option></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Descripción</label>
+                <textarea class="form-input" style="height:80px;resize:vertical;" placeholder="Detalle de la merma observada…"></textarea>
+              </div>
+              <button class="btn btn-danger" style="width:100%;justify-content:center;">Registrar y Descontar del Inventario</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><span>📊</span><span class="card-title">Historial de Mermas — Turno</span></div>
+            <table>
+              <thead><tr><th>Código</th><th>Lote</th><th>Motivo</th><th>Hora</th><th>Operario</th></tr></thead>
+              <tbody>
+                <tr><td class="mono text-danger">BC-00334</td><td class="mono">LOT-2026-0041</td><td>Código ilegible</td><td class="mono">09:31</td><td>García</td></tr>
+                <tr><td class="mono text-danger">BC-00201</td><td class="mono">LOT-2026-0042</td><td>Daño físico</td><td class="mono">08:14</td><td>Torres</td></tr>
+                <tr><td class="mono text-danger">BC-00189</td><td class="mono">LOT-2026-0042</td><td>Duplicado</td><td class="mono">08:02</td><td>García</td></tr>
+              </tbody>
+            </table>
+            <div style="padding:12px 20px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);">
+              Total turno: <strong style="color:var(--warn);">47 mermas</strong> — Impacto inventario: <strong style="color:var(--danger);">-47 unidades descontadas</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TRAZABILIDAD RF-10 ──────────────────────────── -->
+      <div id="page-trazabilidad" class="page">
+        <div class="card mb16">
+          <div class="card-head"><span>🗺️</span><span class="card-title">Consulta de Trazabilidad</span><span class="rf-tag">RF-10</span></div>
+          <div class="card-body">
+            <div class="flex gap8">
+              <input class="form-input" style="flex:1;" placeholder="Buscar por ID de lote, código de barras o sede…">
+              <button class="btn btn-primary">Buscar</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span>📦</span><span class="card-title">Historial Completo — LOT-2026-0041</span></div>
+          <div class="card-body">
+            <div class="timeline">
+              <div class="tl-item"><div class="tl-dot done"></div><div class="tl-text">Stock liberado — 320 unidades disponibles para despacho</div><div class="tl-time">10:15 — Jefe Pérez</div></div>
+              <div class="tl-item"><div class="tl-dot done"></div><div class="tl-text">Calidad aprobada — Analista Rodríguez (integridad 99.2%)</div><div class="tl-time">09:47 — Ana Rodríguez</div></div>
+              <div class="tl-item"><div class="tl-dot done"></div><div class="tl-text">Escaneo completado — 320/320 unidades validadas (1 merma)</div><div class="tl-time">09:30 — Sistema HID</div></div>
+              <div class="tl-item"><div class="tl-dot done"></div><div class="tl-text">Etiquetas enviadas a BarTender — código lote <span class="mono text-accent">LOT-2026-0041</span></div><div class="tl-time">07:12 — Sistema API</div></div>
+              <div class="tl-item" style="margin-bottom:0"><div class="tl-dot done"></div><div class="tl-text">Lote creado desde malla malla_may_2026.xlsx — Sede Centro, 320 uds</div><div class="tl-time">06:05 — Jefe Pérez</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PRODUCCIÓN RF-03 ────────────────────────────── -->
+      <div id="page-produccion" class="page">
+        <div class="section-head">
+          <div class="section-title">Órdenes de Producción</div>
+          <button class="btn btn-primary" onclick="openModal('ordenModal')">+ Nueva Orden</button>
+        </div>
+        <div class="card">
+          <div class="card-head"><span>⚙️</span><span class="card-title">Órdenes Activas</span><span class="rf-tag">RF-03</span></div>
+          <table>
+            <thead><tr><th>Orden</th><th>Producto</th><th>Ruta Logística</th><th>Cantidad</th><th>Turno</th><th>Estado</th></tr></thead>
+            <tbody>
+              <tr><td class="mono text-accent">OP-2026-011</td><td>Bolsa Leche 1L</td><td>Distribución Regional Mayo</td><td>960</td><td>Mañana</td><td><span class="badge badge-green">En Producción</span></td></tr>
+              <tr><td class="mono text-accent">OP-2026-012</td><td>Yogur Natural</td><td>Distribución Regional Mayo</td><td>2,050</td><td>Tarde</td><td><span class="badge badge-warn">Programada</span></td></tr>
+              <tr><td class="mono text-accent">OP-2026-013</td><td>Yogur Fresa</td><td>Distribución Regional Mayo</td><td>1,200</td><td>Noche</td><td><span class="badge badge-muted">Pendiente</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── USUARIOS RF-02 ──────────────────────────────── -->
+      <div id="page-usuarios" class="page">
+        <div class="section-head">
+          <div class="section-title">Gestión de Usuarios</div>
+          <button class="btn btn-primary" onclick="openModal('userModal')">+ Nuevo Usuario</button>
+        </div>
+        <div class="card">
+          <div class="card-head"><span>👥</span><span class="card-title">Usuarios del Sistema</span><span class="rf-tag">RF-02</span>
+            <span class="muted" style="margin-left:auto;font-size:11px;">Acceso por roles — RNF-03 Angular Guards</span>
+          </div>
+          <table>
+            <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Último Acceso</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">jperez@sl.com</td><td>Juan Pérez</td><td><span class="badge badge-green">Jefe de Planta</span></td><td class="mono">08/05/26 06:00</td><td><span class="badge badge-green">Activo</span></td><td><button class="btn btn-outline btn-sm">Editar</button></td></tr>
+              <tr><td class="mono">ogarcia@sl.com</td><td>Orlando García</td><td><span class="badge badge-blue">Operario</span></td><td class="mono">08/05/26 06:05</td><td><span class="badge badge-green">Activo</span></td><td><button class="btn btn-outline btn-sm">Editar</button></td></tr>
+              <tr><td class="mono">arodriguez@sl.com</td><td>Ana Rodríguez</td><td><span class="badge badge-warn">Analista Calidad</span></td><td class="mono">08/05/26 07:30</td><td><span class="badge badge-green">Activo</span></td><td><button class="btn btn-outline btn-sm">Editar</button></td></tr>
+              <tr><td class="mono">ltorres@sl.com</td><td>Luis Torres</td><td><span class="badge badge-blue">Operario</span></td><td class="mono">07/05/26 14:00</td><td><span class="badge badge-muted">Inactivo</span></td><td><button class="btn btn-outline btn-sm">Editar</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- ══════════════════ MODALES ══════════════════ -->
+
+<!-- Notificaciones -->
+<div class="modal-overlay" id="notifModal">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">🔔 Notificaciones</span><button class="modal-close" onclick="closeModal('notifModal')">✕</button></div>
+    <div style="max-height:320px;overflow-y:auto;">
+      <div class="notif"><span class="notif-icon text-danger">🔴</span><div><div class="notif-title">LOT-2026-0045 — Error API BarTender</div><div>El lote Yogur Fresa no pudo ser enviado a impresión. Verifique la conexión.</div><div class="notif-time">hace 18 min</div></div></div>
+      <div class="notif"><span class="notif-icon text-warn">🟡</span><div><div class="notif-title">Sede Occidente — 40% completado</div><div>Solo 88/220 unidades escaneadas para esta sede. Verifique avance.</div><div class="notif-time">hace 32 min</div></div></div>
+      <div class="notif"><span class="notif-icon text-accent">🟢</span><div><div class="notif-title">LOT-2026-0041 aprobado y liberado</div><div>Calidad aprobada por Ana Rodríguez. Stock disponible para despacho.</div><div class="notif-time">hace 45 min</div></div></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('notifModal')">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- Aprobar Lote -->
+<div class="modal-overlay" id="aprobarModal">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">✅ Aprobar Lote — LOT-2026-0042</span><button class="modal-close" onclick="closeModal('aprobarModal')">✕</button></div>
+    <div class="modal-body">
+      <div style="background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.2);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;">
+        ✔ Este lote ha pasado todas las verificaciones requeridas.<br>
+        <strong>Integridad: 99.2%</strong> — 258 uds escaneadas, 2 mermas.
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Firma de aprobación (Analista)</label>
+        <input class="form-input" placeholder="Ingresa tu contraseña para confirmar…" type="password">
+        <div class="form-hint">🔒 Requerido por RNF-02 — Autenticación JWT</div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('aprobarModal')">Cancelar</button><button class="btn btn-primary" onclick="closeModal('aprobarModal')">Confirmar Aprobación</button></div>
+  </div>
+</div>
+
+<!-- Liberar Stock -->
+<div class="modal-overlay" id="liberarModal">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">🔓 Liberar Stock — LOT-2026-0041</span><button class="modal-close" onclick="closeModal('liberarModal')">✕</button></div>
+    <div class="modal-body">
+      <div style="background:rgba(76,158,255,.07);border:1px solid rgba(76,158,255,.2);border-radius:8px;padding:14px;font-size:13px;">
+        <strong>320 unidades</strong> de Bolsa Leche 1L serán marcadas como disponibles para despacho.<br>
+        Esta acción <strong>no puede revertirse</strong> — RF-12 Consolidación e Inmutabilidad.
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('liberarModal')">Cancelar</button><button class="btn btn-primary" onclick="closeModal('liberarModal')">Liberar Stock</button></div>
+  </div>
+</div>
+
+<!-- Nuevo Lote -->
+<div class="modal-overlay" id="loteModal">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">📦 Crear Nuevo Lote</span><button class="modal-close" onclick="closeModal('loteModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Producto</label><select class="form-input"><option>Bolsa Leche 1L</option><option>Bolsa Leche 500ml</option><option>Yogur Natural</option></select></div>
+      <div class="form-group"><label class="form-label">Orden de Producción</label><select class="form-input"><option>OP-2026-011</option><option>OP-2026-012</option></select></div>
+      <div class="form-group" style="margin-bottom:0;"><label class="form-label">Cantidad de Unidades</label><input class="form-input" type="number" placeholder="320"><div class="form-hint">El ID de lote se generará automáticamente — RF-04</div></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('loteModal')">Cancelar</button><button class="btn btn-primary" onclick="closeModal('loteModal')">Crear Lote</button></div>
+  </div>
+</div>
+
+<!-- Nueva Orden Producción -->
+<div class="modal-overlay" id="ordenModal">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">⚙️ Nueva Orden de Producción</span><button class="modal-close" onclick="closeModal('ordenModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Producto</label><select class="form-input"><option>Bolsa Leche 1L</option><option>Yogur Natural</option><option>Yogur Fresa</option></select></div>
+      <div class="form-group"><label class="form-label">Malla Logística</label><select class="form-input"><option>Distribución Regional Mayo 2026</option></select></div>
+      <div class="grid-2">
+        <div class="form-group" style="margin-bottom:0;"><label class="form-label">Cantidad</label><input class="form-input" type="number" placeholder="960"></div>
+        <div class="form-group" style="margin-bottom:0;"><label class="form-label">Turno</label><select class="form-input"><option>Mañana</option><option>Tarde</option><option>Noche</option></select></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('ordenModal')">Cancelar</button><button class="btn btn-primary" onclick="closeModal('ordenModal')">Crear Orden</button></div>
+  </div>
+</div>
+
+<!-- Nuevo Usuario -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">👤 Nuevo Usuario</span><button class="modal-close" onclick="closeModal('userModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" placeholder="Nombre completo"></div>
+        <div class="form-group"><label class="form-label">Correo</label><input class="form-input" type="email" placeholder="usuario@sl.com"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Rol</label><select class="form-input"><option>Jefe de Planta</option><option>Operario</option><option>Analista de Calidad</option></select><div class="form-hint">Define los permisos mediante Angular Guards — RNF-03</div></div>
+      <div class="form-group" style="margin-bottom:0;"><label class="form-label">Contraseña temporal</label><input class="form-input" type="password" placeholder="Mínimo 8 caracteres"><div class="form-hint">Contraseñas cifradas — RNF-02</div></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('userModal')">Cancelar</button><button class="btn btn-primary" onclick="closeModal('userModal')">Crear Usuario</button></div>
+  </div>
+</div>
+
+<!-- Reporte Modal -->
+<div class="modal-overlay" id="reporteModal">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">📊 Reporte de Producción</span><button class="modal-close" onclick="closeModal('reporteModal')">✕</button></div>
+    <div class="modal-body">
+      <div style="background:var(--surface2);border-radius:8px;padding:16px;font-size:12px;">
+        <div style="font-weight:600;margin-bottom:8px;">Período: 01/05/2026 — 08/05/2026</div>
+        <div class="flex-center between" style="margin-bottom:6px;"><span>Total lotes procesados</span><span class="mono text-accent">142</span></div>
+        <div class="flex-center between" style="margin-bottom:6px;"><span>Total unidades producidas</span><span class="mono text-accent">68,420</span></div>
+        <div class="flex-center between" style="margin-bottom:6px;"><span>Total mermas</span><span class="mono text-warn">312</span></div>
+        <div class="flex-center between"><span>% eficiencia</span><span class="mono text-accent">99.5%</span></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('reporteModal')">Cerrar</button><button class="btn btn-primary">Exportar PDF</button></div>
+  </div>
+</div>
+
+<script>
+// ── AUTH ──────────────────────────────────────────────
+function selectRole(el){
+  document.querySelectorAll('.role-opt').forEach(r=>r.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function validateLogin(){
+  document.getElementById('loginError').style.display='none';
+}
+function doLogin(){
+  const u=document.getElementById('loginUser').value;
+  const p=document.getElementById('loginPass').value;
+  if(!u||!p){
+    document.getElementById('loginError').style.display='flex';
+    return;
+  }
+  document.getElementById('loginPage').style.display='none';
+  document.getElementById('appShell').style.display='flex';
+}
+function doLogout(){
+  document.getElementById('appShell').style.display='none';
+  document.getElementById('loginPage').style.display='flex';
+  document.getElementById('loginUser').value='';
+  document.getElementById('loginPass').value='';
+}
+
+// ── NAVIGATION ────────────────────────────────────────
+const pageTitles={
+  dashboard:'Dashboard General',mallas:'Carga de Mallas Logísticas',
+  produccion:'Órdenes de Producción',lotes:'Gestión de Lotes & BarTender',
+  escaneo:'Escaneo Secuencial HID',inventario:'Inventario Operativo',
+  mermas:'Registro de Mermas',calidad:'Control de Calidad',
+  liberacion:'Liberación de Stock',trazabilidad:'Trazabilidad de Producción',
+  usuarios:'Gestión de Usuarios'
+};
+const pageBread={
+  dashboard:'Sistema S&L › Principal',mallas:'Sistema S&L › Mallas Logísticas',
+  produccion:'Sistema S&L › Producción',lotes:'Sistema S&L › Operación › Lotes',
+  escaneo:'Sistema S&L › Operación › Escaneo',inventario:'Sistema S&L › Operación › Inventario',
+  mermas:'Sistema S&L › Operación › Mermas',calidad:'Sistema S&L › Calidad',
+  liberacion:'Sistema S&L › Calidad › Liberación',trazabilidad:'Sistema S&L › Calidad › Trazabilidad',
+  usuarios:'Sistema S&L › Admin › Usuarios'
+};
+function navigate(page, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const p=document.getElementById('page-'+page);
+  if(p) p.classList.add('active');
+  el.classList.add('active');
+  document.getElementById('pageTitle').textContent=pageTitles[page]||page;
+  document.getElementById('pageBreadcrumb').innerHTML=pageBread[page]||'Sistema S&L';
+}
+
+// ── MODALES ───────────────────────────────────────────
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+
+// ── UPLOAD SIMULATION ─────────────────────────────────
+function simulateUpload(){
+  const prog=document.getElementById('uploadProgress');
+  const bar=document.getElementById('uploadBar');
+  const done=document.getElementById('uploadDone');
+  prog.style.display='block'; done.style.display='none';
+  let w=0;
+  const iv=setInterval(()=>{
+    w+=Math.random()*15;
+    if(w>=100){w=100;clearInterval(iv);setTimeout(()=>{prog.style.display='none';done.style.display='flex';},300);}
+    bar.style.width=w+'%';
+  },180);
+}
+
+// ── SCAN SIMULATION ───────────────────────────────────
+let scanCount=391;
+function simulateScan(){
+  scanCount++;
+  const tb=document.getElementById('scanLogBody');
+  const code='BC-00'+String(scanCount).padStart(3,'0');
+  const now=new Date();
+  const t=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td class="mono">${scanCount}</td><td class="mono text-accent">${code}</td><td class="mono">${t}</td><td><span class="badge badge-green">OK</span></td>`;
+  tr.style.opacity='0';tr.style.transition='opacity .3s';
+  tb.insertBefore(tr,tb.firstChild);
+  setTimeout(()=>tr.style.opacity='1',10);
+  // update progress
+  const pct=Math.min(100,Math.round((scanCount-390)/350*100+85));
+  document.getElementById('scanProg').style.width=pct+'%';
+  document.querySelector('.scanner-box .mono').textContent='Última lectura: '+code;
+}
+
+// ── MERMA VALIDATION ──────────────────────────────────
+function validateMerma(el){
+  const err=document.getElementById('mermaError');
+  if(el.value.length>5&&!el.value.startsWith('BC-')){
+    el.classList.add('error'); err.style.display='flex';
+  } else {
+    el.classList.remove('error'); err.style.display='none';
+  }
+}
+</script>
+</body>
+</html>

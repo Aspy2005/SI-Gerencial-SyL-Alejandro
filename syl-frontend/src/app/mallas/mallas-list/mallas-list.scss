@@ -1,0 +1,74 @@
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table th {
+  color: white;
+  font-weight: 600;
+  padding: 12px;
+  border-bottom: 1px solid #444;
+}
+
+table td {
+  color: white;
+  padding: 12px;
+  border-bottom: 1px solid #333;
+}
+
+.card {
+  
+  border: 1px solid #333;
+  border-radius: 10px;
+}
+
+.card-title {
+  color: white;
+}
+
+.upload-title,
+.upload-sub,
+.form-label,
+.form-hint,
+span,
+p,
+strong {
+  color: white;
+}
+
+.upload-zone {
+  border: 2px dashed #666;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: 0.2s;
+}
+
+.upload-zone:hover {
+  border-color: #999;
+  
+}
+
+.btn {
+  color: white;
+}
+
+.btn-outline {
+  border: 1px solid #666;
+  background: transparent;
+}
+
+.btn-primary {
+  background: #2563eb;
+  border: none;
+}
+
+.badge {
+  color: white;
+}
+
+.preview-table {
+  margin-top: 20px;
+  overflow-x: auto;
+}

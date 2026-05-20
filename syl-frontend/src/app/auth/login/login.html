@@ -1,0 +1,49 @@
+<div class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">SL</div>
+      <div class="login-logo-name">Sistema Inteligente S&amp;L</div>
+      <div class="login-logo-sub">Gestión de Producción y Despacho Logístico</div>
+    </div>
+    <div class="login-card">
+      <div class="login-title">Iniciar Sesión</div>
+      <div class="login-subtitle">Selecciona tu perfil y accede al sistema</div>
+
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:600;">
+        Perfil de acceso <span class="rf-tag" style="margin-left:4px;">RF-02</span>
+      </div>
+      <div class="role-selector">
+        <div class="role-opt" [class.sel]="selectedRole === 'jefe'" (click)="selectedRole = 'jefe'">
+          <div class="role-icon">🏭</div>
+          <div class="role-name">Jefe de Planta</div>
+        </div>
+        <div class="role-opt" [class.sel]="selectedRole === 'operario'" (click)="selectedRole = 'operario'">
+          <div class="role-icon">🔧</div>
+          <div class="role-name">Operario</div>
+        </div>
+        <div class="role-opt" [class.sel]="selectedRole === 'analista'" (click)="selectedRole = 'analista'">
+          <div class="role-icon">🔬</div>
+          <div class="role-name">Analista Calidad</div>
+        </div>
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <div class="form-group">
+          <label class="form-label">Usuario</label>
+          <input class="form-input" type="text" placeholder="usuario@empresa.com" formControlName="username">
+        </div>
+        <div class="form-group" style="margin-bottom:20px;">
+          <label class="form-label">Contraseña</label>
+          <input class="form-input" type="password" placeholder="••••••••" formControlName="password">
+          <div class="form-hint">🔒 Autenticación JWT — RNF-02</div>
+        </div>
+        <div *ngIf="error" class="form-error" style="margin-bottom:12px;">
+          ⚠ {{ error }}
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;" [disabled]="loading">
+          {{ loading ? 'Ingresando...' : 'Ingresar al Sistema →' }}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

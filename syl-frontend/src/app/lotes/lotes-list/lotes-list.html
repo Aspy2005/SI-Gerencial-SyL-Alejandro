@@ -1,0 +1,648 @@
+<div>
+
+  <div class="section-head">
+
+    <div class="section-title">
+      Gestión de Lotes & API BarTender
+    </div>
+
+    <div class="flex gap8">
+
+      <button
+        type="button"
+        class="btn btn-outline"
+        (click)="showModal = true"
+      >
+        + Nuevo Lote
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="enviarTodos()"
+      >
+        Enviar a BarTender →
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- TABLA LOTES -->
+
+  <div class="card">
+
+    <div class="card-head">
+
+      <span>📦</span>
+
+      <span class="card-title">
+        Lotes Generados
+      </span>
+
+      <span class="rf-tag">
+        RF-04
+      </span>
+
+      <span
+        class="badge badge-blue"
+        style="margin-left:auto;"
+      >
+        {{ lotes.length }} lotes
+      </span>
+
+    </div>
+
+    <div style="overflow-x:auto;">
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>ID Lote</th>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Estado</th>
+            <th>Orden Envío</th>
+            <th>Orden Producción</th>
+            <th>Acciones</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          <tr *ngIf="lotes.length === 0">
+
+            <td
+              colspan="7"
+              style="text-align:center;padding:24px;"
+            >
+              No hay lotes generados
+            </td>
+
+          </tr>
+
+          <ng-container *ngFor="let lote of lotes">
+
+            <tr>
+
+              <td class="mono text-accent">
+                {{ lote.codigo_lote }}
+              </td>
+
+              <td>
+                {{ lote.producto }}
+              </td>
+
+              <td>
+                {{ lote.cantidad }}
+              </td>
+
+              <td>
+
+                <span
+                  class="badge"
+                  [ngClass]="ESTADO_CLASS[lote.estado]"
+                >
+                  {{ lote.estado_display }}
+                </span>
+
+              </td>
+
+              <td class="mono">
+                {{ lote.orden_envio }}
+              </td>
+
+              <td class="mono">
+                {{ lote.orden }}
+              </td>
+
+              <td
+                style="
+                  display:flex;
+                  gap:6px;
+                  flex-wrap:wrap;
+                "
+              >
+
+                <button
+                  *ngIf="lote.estado !== 'enviado'"
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  (click)="enviarLote(lote)"
+                >
+                  Enviar
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  (click)="lote.showBolsas = !lote.showBolsas"
+                >
+                  {{
+                    lote.showBolsas
+                      ? 'Ocultar'
+                      : 'Ver Bolsas'
+                  }}
+                </button>
+<button
+  type="button"
+  class="btn btn-danger btn-sm"
+  (click)="eliminarLote(lote)"
+>
+  🗑 Eliminar
+</button>
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  (click)="verLote(lote)"
+                >
+                  Ver Detalle
+                </button>
+
+              </td>
+
+            </tr>
+
+            <!-- DETALLE BOLSAS -->
+
+            <tr *ngIf="lote.showBolsas">
+
+              <td colspan="7">
+
+                <div
+                  style="
+                    padding:16px;
+                    background:#111827;
+                    border-radius:12px;
+                    margin:10px 0;
+                  "
+                >
+
+                  <h4 style="margin-bottom:14px;">
+
+                    Bolsas del lote
+
+                  </h4>
+
+                  <div style="overflow-x:auto;">
+
+                    <table
+                      style="
+                        width:100%;
+                        background:transparent;
+                      "
+                    >
+
+                      <thead>
+
+                        <tr>
+
+                          <th>Bolsa</th>
+
+                          <th>Código Barras</th>
+
+                          <th>Serial</th>
+
+                          <th>Sede</th>
+
+                          <th>Ciudad</th>
+
+                          <th>Ruta</th>
+
+                          <th>Peso</th>
+
+                          <th>Impresa</th>
+
+                        </tr>
+
+                      </thead>
+
+                      <tbody>
+
+                        <tr
+                          *ngFor="let bolsa of lote.bolsas"
+                        >
+
+                          <td class="mono">
+                            {{ bolsa.codigo_bolsa }}
+                          </td>
+
+                          <td class="mono">
+                            {{ bolsa.codigo_barras }}
+                          </td>
+
+                          <td class="mono">
+                            {{ bolsa.serial }}
+                          </td>
+
+                          <td>
+                            {{ bolsa.sede }}
+                          </td>
+
+                          <td>
+                            {{ bolsa.ciudad }}
+                          </td>
+
+                          <td>
+                            {{ bolsa.ruta }}
+                          </td>
+
+                          <td>
+                            {{ bolsa.peso }} kg
+                          </td>
+
+                          <td>
+
+                            <span
+                              class="badge"
+                              [ngClass]="
+                                bolsa.impresa
+                                  ? 'badge-green'
+                                  : 'badge-muted'
+                              "
+                            >
+
+                              {{
+                                bolsa.impresa
+                                  ? 'Sí'
+                                  : 'No'
+                              }}
+
+                            </span>
+
+                          </td>
+
+                        </tr>
+
+                        <tr
+                          *ngIf="
+                            !lote.bolsas ||
+                            lote.bolsas.length === 0
+                          "
+                        >
+
+                          <td
+                            colspan="8"
+                            style="
+                              text-align:center;
+                              padding:16px;
+                            "
+                          >
+
+                            No hay bolsas generadas
+
+                          </td>
+
+                        </tr>
+
+                      </tbody>
+
+                    </table>
+
+                  </div>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+          </ng-container>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+    <div
+      style="
+        padding:12px 20px;
+        border-top:1px solid var(--border);
+        font-size:12px;
+        color:var(--muted);
+      "
+    >
+
+      ⚠ El orden de envío a BarTender
+      respeta estrictamente el orden original
+      del archivo cargado — RF-04
+
+    </div>
+
+  </div>
+
+  <!-- NUEVO LOTE -->
+
+  <div
+    class="card"
+    *ngIf="showModal"
+    style="
+      margin-top:16px;
+      border:1px solid var(--accent);
+    "
+  >
+
+    <div class="card-head">
+
+      <span>📦</span>
+
+      <span class="card-title">
+        Nuevo Lote
+      </span>
+
+      <button
+        type="button"
+        class="btn btn-outline btn-sm"
+        style="margin-left:auto;"
+        (click)="showModal = false"
+      >
+        ✕ Cerrar
+      </button>
+
+    </div>
+
+    <div style="padding:24px;">
+
+      <form [formGroup]="form">
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Orden de Producción
+          </label>
+
+          <select
+            class="form-input"
+            formControlName="orden"
+          >
+
+            <option [ngValue]="null">
+              Seleccione una orden
+            </option>
+
+            <option
+              *ngFor="let orden of ordenes"
+              [ngValue]="orden.id"
+            >
+
+              {{ orden.codigo_orden }}
+              —
+              {{ orden.producto }}
+              —
+              {{ orden.cantidad }} bolsas
+
+            </option>
+
+          </select>
+
+        </div>
+
+        <div
+          style="
+            display:flex;
+            justify-content:flex-end;
+            gap:8px;
+            margin-top:20px;
+          "
+        >
+
+          <button
+            type="button"
+            class="btn btn-outline"
+            (click)="showModal = false"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="generarLote()"
+            [disabled]="submitting"
+          >
+            Generar Lote
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+  <!-- DETALLE COMPLETO -->
+
+  <div
+    class="card"
+    *ngIf="loteSeleccionado"
+    style="
+      margin-top:16px;
+      border:1px solid var(--accent);
+    "
+  >
+
+    <div class="card-head">
+
+      <span>📋</span>
+
+      <span class="card-title">
+        Detalle del Lote
+      </span>
+
+      <button
+        type="button"
+        class="btn btn-outline btn-sm"
+        style="margin-left:auto;"
+        (click)="loteSeleccionado = null"
+      >
+        ✕ Cerrar
+      </button>
+
+    </div>
+
+    <div style="padding:24px;">
+
+      <div class="grid-2">
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Código Lote
+          </label>
+
+          <div class="form-input">
+            {{ loteSeleccionado.codigo_lote }}
+          </div>
+
+        </div>
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Producto
+          </label>
+
+          <div class="form-input">
+            {{ loteSeleccionado.producto }}
+          </div>
+
+        </div>
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Cantidad
+          </label>
+
+          <div class="form-input">
+            {{ loteSeleccionado.cantidad }}
+          </div>
+
+        </div>
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Estado
+          </label>
+
+          <div class="form-input">
+            {{ loteSeleccionado.estado_display }}
+          </div>
+
+        </div>
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Orden Envío
+          </label>
+
+          <div class="form-input">
+            {{ loteSeleccionado.orden_envio }}
+          </div>
+
+        </div>
+
+        <div class="form-group">
+
+          <label class="form-label">
+            Fecha Envío
+          </label>
+
+          <div class="form-input">
+            {{ loteSeleccionado.fecha_envio_bt || 'No enviado' }}
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- TABLA BOLSAS -->
+
+      <div style="margin-top:24px;">
+
+        <h3 style="margin-bottom:14px;">
+          Bolsas del lote
+        </h3>
+
+        <div style="overflow-x:auto;">
+
+          <table>
+
+            <thead>
+
+              <tr>
+
+                <th>Bolsa</th>
+                <th>Código Barras</th>
+                <th>Serial</th>
+                <th>Sede</th>
+                <th>Ciudad</th>
+                <th>Ruta</th>
+                <th>Peso</th>
+                <th>Impresa</th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              <tr
+                *ngFor="
+                  let bolsa of loteSeleccionado.bolsas
+                "
+              >
+
+                <td class="mono">
+                  {{ bolsa.codigo_bolsa }}
+                </td>
+
+                <td class="mono">
+                  {{ bolsa.codigo_barras }}
+                </td>
+
+                <td class="mono">
+                  {{ bolsa.serial }}
+                </td>
+
+                <td>
+                  {{ bolsa.sede }}
+                </td>
+
+                <td>
+                  {{ bolsa.ciudad }}
+                </td>
+
+                <td>
+                  {{ bolsa.ruta }}
+                </td>
+
+                <td>
+                  {{ bolsa.peso }} kg
+                </td>
+
+                <td>
+
+                  <span
+                    class="badge"
+                    [ngClass]="
+                      bolsa.impresa
+                        ? 'badge-green'
+                        : 'badge-warn'
+                    "
+                  >
+
+                    {{
+                      bolsa.impresa
+                        ? 'Impresa'
+                        : 'Pendiente'
+                    }}
+
+                  </span>
+
+                </td>
+
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
